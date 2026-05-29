@@ -64,7 +64,8 @@ model = FastLanguageModel.get_peft_model(
 from datasets import load_dataset
 
 ds = load_dataset("fhai50032/latentsig-med-triage-router", split="train")
-print(f"Loaded {len(ds)} samples")
+eval_ds = load_dataset("fhai50032/latentsig-med-triage-router", split="eval")
+print(f"Train: {len(ds)} samples | Eval: {len(eval_ds)} samples")
 print(f"Columns: {ds.column_names}")
 # ['user_query', 'response', 'parsed_response', 'tool_called',
 #  'category', 'generation_model_id', 'language', 'llm_judge_id',
@@ -165,11 +166,11 @@ def format_to_text(row):
 
 # Apply — removes all original columns, keeps only "text"
 ds = ds.map(format_to_text, remove_columns=ds.column_names)
+eval_ds = eval_ds.map(format_to_text, remove_columns=eval_ds.column_names)
 
-# Verify one sample
-print(ds[0]["text"][:200])
-print("...")
-print(f"Dataset: {len(ds)} samples, columns: {ds.column_names}")
+# Verify
+print(f"Train: {len(ds)} samples, columns: {ds.column_names}")
+print(f"Eval: {len(eval_ds)} samples, columns: {eval_ds.column_names}")
 ```
 
 ---
@@ -198,34 +199,78 @@ wandb.init(
 
 ---
 
-## Step 5: Train
+## Step 5: Train with Eval
 
 ```python
+import wandb
+import os
+
+os.environ["WANDB_API_KEY"] = "YOUR_WANDB_KEY"
+
+wandb.init(
+    project="latentsig-med-triage-router",
+    name="qwen3-4b-qlora-v1",
+    config={
+        "model": "unsloth/Qwen3-4B-Instruct",
+        "method": "QLoRA",
+        "r": 16,
+        "lora_alpha": 32,
+        "epochs": 3,
+        "batch_size": 4,
+        "lr": 2e-4,
+        "dataset": "fhai50032/latentsig-med-triage-router",
+    },
+    tags=["qlora", "qwen3-4b", "medical-triage", "v1"],
+)
+
 from trl import SFTTrainer, SFTConfig
 
 trainer = SFTTrainer(
     model=model,
     tokenizer=tokenizer,
     train_dataset=ds,
+    eval_dataset=eval_ds,
     args=SFTConfig(
-        output_dir="./latentsig-med-router-output",
-        num_train_epochs=3,
+        # Core
+        dataset_text_field="text",
         per_device_train_batch_size=4,
-        gradient_accumulation_steps=4,      # effective batch = 16
+        gradient_accumulation_steps=4,     # effective batch = 16
+        num_train_epochs=3,
+
+        # Optimizer
         learning_rate=2e-4,
+        optim="adamw_8bit",
+        weight_decay=0.01,
         lr_scheduler_type="cosine",
         warmup_ratio=0.1,
-        weight_decay=0.01,
-        max_seq_length=2048,
-        logging_steps=10,
+        max_grad_norm=1.0,
+
+        # Precision
+        fp16=True,                         # T4 = fp16, not bf16
+        bf16=False,
+
+        # Logging
+        logging_steps=5,
+        report_to="wandb",
+
+        # Checkpointing
         save_strategy="epoch",
         save_total_limit=2,
-        optim="adamw_8bit",
+        eval_strategy="epoch",
+
+        # Sequence
+        max_seq_length=2048,
+
+        # Reproducibility
         seed=42,
-        report_to="wandb",
-        fp16=True,                           # T4 = fp16, not bf16
+
+        # Gradient checkpointing (Unsloth optimized)
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": True},
+
+        # Misc
+        output_dir="./latentsig-med-router-output",
+        remove_unused_columns=True,
     ),
 )
 
