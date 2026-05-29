@@ -123,17 +123,49 @@ QUERY_GEN_SYSTEM = """You are a medical scenario generator. Generate realistic p
 You must output ONLY a JSON object:
 {{"query": "<patient symptom description in 1-2 sentences>"}}
 
-Make the query:
-- Realistic (like a real patient or nurse would describe)
-- Varied in age, gender, symptoms, severity
-- Include enough detail for triage (age, duration, key symptoms)
-- Use natural language, not clinical jargon
+CRITICAL: You MUST generate a query that would specifically require the "{target_tool}" tool.
 
-IMPORTANT: You MUST generate a query that would specifically require the "{target_tool}" tool.
-The query should be a scenario where this tool is the most appropriate choice.
+## Tool Descriptions
+{tool_descriptions}
 
-Tool descriptions:
-{tool_descriptions}"""
+## Few-Shot Examples (observe which tool each query maps to)
+
+### triage_assessment examples:
+- "My 3-year-old has had a runny nose and mild cough for 2 days. No fever, still playing normally."
+- "45-year-old male, persistent dull headache for a week, worse in mornings, no vision changes."
+- "28-year-old female, sprained ankle playing soccer, can walk with limp, mild swelling."
+
+### vital_signs_analysis examples:
+- "Patient presents with BP 180/110, heart rate 110, temp 38.5C, SpO2 94%. Known hypertensive."
+- "Elderly male, HR 45 bpm, BP 90/60, SpO2 91%, RR 22. Feeling dizzy and weak."
+- "Post-op patient: temp 39.2C, HR 120, BP 100/70, SpO2 96%, RR 24."
+
+### medication_check examples:
+- "Patient on warfarin wants to take ibuprofen for back pain. Currently on 5mg daily."
+- "68-year-old on metformin, lisinopril, and atorvastatin. New prescription for clarithromycin."
+- "Mother says child took two doses of amoxicillin by mistake, double the prescribed amount."
+
+### specialist_referral examples:
+- "Persistent hoarseness for 6 weeks, non-smoker, no improvement with voice rest."
+- "Recurring episodes of severe abdominal pain after eating, ultrasound shows gallstones."
+- "Chronic knee pain worsening over 6 months, X-ray shows moderate osteoarthritis."
+
+### emergency_dispatch examples:
+- "68-year-old male, sudden facial droop, cannot speak, right arm weakness."
+- "Crushing chest pain radiating to left arm, sweating, nausea, 55-year-old male."
+- "3-year-old swallowed a button battery, crying, drooling, refusing to eat."
+
+### mental_health_triage examples:
+- "Patient says they have a plan to end their life tonight, has access to pills."
+- "22-year-old hearing voices telling them to hurt themselves, not sleeping for 3 days."
+- "Severe panic attack, hyperventilating, chest tightness, convinced they're dying."
+
+### lab_order_suggestion examples:
+- "Chronic fatigue for 3 months, pale skin, shortness of breath on exertion."
+- "Unexplained weight loss of 10kg in 2 months, night sweats, low-grade fever."
+- "Recurrent UTIs, now dysuria and urgency again, wants to check if infection cleared."
+
+Now generate a NEW, UNIQUE query for the "{target_tool}" tool. Make it realistic and different from the examples above."""
 
 HINGLISH_QUERY_GEN_SYSTEM = '''You are a Hinglish medical scenario generator. Convert the given English medical query to natural Hinglish (Hindi written in Roman script, mixed with English medical terms).
 
@@ -203,10 +235,19 @@ def translate_to_hinglish(key: str, english_query: str, model: str) -> tuple[str
         return english_query, latency, model_used
 
 
-def generate_response(key: str, system_prompt: str, user_query: str, model: str) -> tuple[str, float, str]:
+def generate_response(key: str, system_prompt: str, user_query: str, model: str, target_tool_hint: str = None) -> tuple[str, float, str]:
+    """Generate triage response. If target_tool_hint is set, append it as guidance.
+
+    The hint ensures clean training data. During inference, the fine-tuned model
+    won't have this hint — it learns to pick the right tool from the query alone.
+    """
+    user_msg = user_query
+    if target_tool_hint:
+        user_msg += f"\n\n[Use the {target_tool_hint} tool for this case.]"
+
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_query},
+        {"role": "user", "content": user_msg},
     ]
     content, latency, model_used = call_mistral(key, messages, model=model, max_tokens=300, temperature=0.1)
     return content, latency, model_used
@@ -339,18 +380,17 @@ class ParallelOrchestrator:
         self._tool_lock = Lock()
 
     def _pick_target_tool(self) -> str:
-        """Pick the least-used tool to ensure balanced coverage."""
+        """Pick the least-used tool to ensure balanced coverage.
+        Only counts SAVED samples (incremented in _generate_one on success).
+        """
         with self._tool_lock:
-            # Weighted random: inverse of count (least used = highest weight)
             tools = list(self._tool_counts.keys())
             counts = [self._tool_counts[t] for t in tools]
-            min_count = min(counts) if counts else 0
-            # Weight = 1 + (max - count) so least-used tools get highest weight
             max_count = max(counts) if counts else 0
+            # Weight = 1 + (max - count) so least-used tools get highest weight
             weights = [1 + (max_count - c) for c in counts]
             chosen = random.choices(tools, weights=weights, k=1)[0]
-            self._tool_counts[chosen] += 1
-            return chosen
+            return chosen  # Don't increment here — increment on save
 
     def _scan_existing(self) -> tuple[int, int, int]:
         en_count = 0
@@ -373,6 +413,14 @@ class ParallelOrchestrator:
                     h = rec.get("hash")
                     if h:
                         self.hash_store.seen.add(h)
+                    # Load tool counts for balancing
+                    try:
+                        parsed = json.loads(rec.get("parsed_response", "{}"))
+                        tool = parsed.get("tool")
+                        if tool:
+                            self._tool_counts[tool] = self._tool_counts.get(tool, 0) + 1
+                    except:
+                        pass
                 except json.JSONDecodeError:
                     continue
         return en_count, hi_en_count, total
@@ -387,10 +435,12 @@ class ParallelOrchestrator:
             gen_model = random.choice(GENERATION_MODELS)
             key1 = self.keys.next()
 
-            # Generate query targeted at a specific tool
-            category_hint = random.choice(["emergency", "urgent", "semi_urgent", "routine"])
+            # Pick target tool ONCE — retry with same tool on failure
             if target_tool is None:
                 target_tool = self._pick_target_tool()
+
+            # Generate query targeted at a specific tool
+            category_hint = random.choice(["emergency", "urgent", "semi_urgent", "routine"])
             en_query, _, _ = generate_query(key1, gen_model, category_hint, target_tool)
 
             if language == "hi_en":
@@ -399,9 +449,9 @@ class ParallelOrchestrator:
             else:
                 user_query = en_query
 
-            # Generate response
+            # Generate response (with tool hint for clean training data)
             key3 = self.keys.next()
-            raw_response, _, _ = generate_response(key3, self.system_prompt, user_query, gen_model)
+            raw_response, _, _ = generate_response(key3, self.system_prompt, user_query, gen_model, target_tool)
 
             # Verify (pass target_tool for enforcement)
             verification = self.verifier.verify(user_query, raw_response, target_tool)
@@ -443,6 +493,11 @@ class ParallelOrchestrator:
             }
 
             self.writer.append(record)
+
+            # Track tool usage for balancing (only on successful save)
+            with self._tool_lock:
+                self._tool_counts[target_tool] = self._tool_counts.get(target_tool, 0) + 1
+
             self.stats.update(recent_sample={
                 "query": user_query[:100],
                 "tool": verification["parsed"].get("tool") if verification["parsed"] else "?",

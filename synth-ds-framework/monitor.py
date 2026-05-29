@@ -142,6 +142,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 </style>
 </head><body>
 <h1>LatentSig Datagen Monitor</h1>
+<div style="margin-bottom:16px;"><a href="/" style="color:#58a6ff;text-decoration:none;margin-right:16px;font-weight:600;">Dashboard</a><a href="/viewer" style="color:#58a6ff;text-decoration:none;margin-right:16px;font-weight:600;">Dataset Viewer</a><a href="/api/stats" style="color:#58a6ff;text-decoration:none;font-weight:600;">API</a></div>
 
 <div class="grid">
   <div class="card"><div class="num">{{stats.total}}</div><div class="label">Total Samples</div></div>
