@@ -463,23 +463,23 @@ class ParallelOrchestrator:
                 self.stats.increment("duplicates")
                 return False
 
-            # Track stats
-            self.stats.increment("passed" if verdict == "pass" else "failed_" + (
-                "structural" if not verification["structural"]["passed"] else
-                "semantic" if not verification["semantic"]["passed"] else "judge"
-            ))
-
-            if language == "en":
-                self.stats.increment("en_count")
-            else:
-                self.stats.increment("hi_en_count")
-
-            # Only save pass samples
+            # Only save pass samples — DON'T increment en/hi counters for fails
             if save_only_pass and verdict != "pass":
+                self.stats.increment("failed_" + (
+                    "structural" if not verification["structural"]["passed"] else
+                    "semantic" if not verification["semantic"]["passed"] else "judge"
+                ))
                 return False
 
             # NOW add hash to seen set (only after we know it's saved)
             self.hash_store.add(h)
+
+            # Track stats ONLY for saved samples
+            self.stats.increment("passed")
+            if language == "en":
+                self.stats.increment("en_count")
+            else:
+                self.stats.increment("hi_en_count")
 
             parsed = verification["parsed"] or {}
             record = {
