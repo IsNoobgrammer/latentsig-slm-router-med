@@ -89,21 +89,28 @@ Hinglish queries are slightly longer on average (179 vs 156 chars) due to Hindi 
 
 Every sample passed a **3-layer verification pipeline** before inclusion:
 
-```mermaid
-flowchart LR
-    A[Generated Sample] --> B{Phase 1: Pydantic}
-    B -->|Valid JSON + Fields| C{Phase 2: Tool Enforcement}
-    B -->|Invalid| X[Rejected]
-    C -->|Target Tool Match| D{Phase 3: LLM Judge}
-    C -->|Wrong Tool| X
-    D -->|Medical Accuracy Pass| E[Saved to Dataset]
-    D -->|Medical Accuracy Fail| X
-    
-    style E fill:#3fb950,color:#fff
-    style X fill:#f85149,color:#fff
-    style B fill:#58a6ff,color:#fff
-    style C fill:#d29922,color:#fff
-    style D fill:#bc8cff,color:#fff
+### Verification Pipeline Flowchart
+
+> **[Open interactive diagram](https://excalidraw.com)** — download and drag-drop `verification_pipeline.excalidraw` onto excalidraw.com
+
+![Verification Pipeline](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/verification_pipeline.excalidraw)
+
+Download: [`verification_pipeline.excalidraw`](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/verification_pipeline.excalidraw)
+
+```
+Generated Sample
+      |
+      v
+[Phase 1: Pydantic] --Invalid--> Rejected
+      | Valid
+      v
+[Phase 2: Tool Enforcement] --Wrong Tool--> Rejected
+      | Match
+      v
+[Phase 3: LLM Judge] --Fail--> Rejected
+      | Pass
+      v
+Saved to Dataset
 ```
 
 | Layer | Method | Purpose | Speed |
@@ -118,38 +125,33 @@ flowchart LR
 
 ## Generation Pipeline
 
-```mermaid
-flowchart TD
-    subgraph Generation
-        A[Tool Schema Registry] --> B[_pick_target_tool]
-        B --> C[Query Generator<br/>mistral-large / medium / magistral]
-        C --> D[Hinglish Translator<br/>if language = hi_en]
-        D --> E[Response Generator<br/>with tool hint]
-    end
-    
-    subgraph Verification
-        E --> F[Pydantic Validator]
-        F --> G[Tool Enforcement]
-        G --> H[LLM Judge<br/>mistral-small — unbiased]
-    end
-    
-    subgraph Storage
-        H -->|Pass| I[Dedup Check]
-        H -->|Fail| J[Retry with same tool]
-        I -->|New Hash| K[Write to JSONL]
-        I -->|Duplicate| J
-        J --> C
-    end
-    
-    subgraph Monitoring
-        K --> L[.live_stats.json]
-        L --> M[Flask Dashboard<br/>localhost:5000]
-    end
-    
-    style A fill:#58a6ff,color:#fff
-    style K fill:#3fb950,color:#fff
-    style J fill:#d29922,color:#fff
-    style M fill:#bc8cff,color:#fff
+### Generation Pipeline Flowchart
+
+> **[Open interactive diagram](https://excalidraw.com)** — download and drag-drop `generation_pipeline.excalidraw` onto excalidraw.com
+
+Download: [`generation_pipeline.excalidraw`](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/generation_pipeline.excalidraw)
+
+```
+Tool Schema Registry (7 tools)
+        |
+        v
+pick_target_tool (weighted random, least-used favored)
+        |
+        v
+Query Generator (mistral-large / medium / magistral)
+        |
+        v (if Hinglish)
+Hinglish Translator
+        |
+        v
+Response Generator (with tool hint: [Use X tool])
+        |
+        v
+3-Layer Verifier (Pydantic + Tool Enforcement + LLM Judge)
+        |
+   Pass |          Fail -> Retry (same target tool)
+        v
+Hash Dedup -> Write JSONL -> Live Stats + Monitor
 ```
 
 **Key design decisions:**
