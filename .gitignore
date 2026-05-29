@@ -3,3 +3,6 @@ __pycache__/
 dataset.jsonl
 .hashes_seen.json
 benchmark_results.json
+tool_logs/
+data/*.parquet
+.live_stats.json

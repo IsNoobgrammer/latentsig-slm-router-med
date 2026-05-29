@@ -8,6 +8,7 @@
 #   - Simple: responses are mock data, not real medical logic
 # ─────────────────────────────────────────────────────────────
 
+import os
 import json
 import time
 import hashlib
@@ -15,16 +16,22 @@ from datetime import datetime
 from typing import Any
 
 
-# ── Tool Call Log (in-memory DB) ─────────────────────────────
+# ── Tool Call Log (in-memory + CSV files) ────────────────────
+
+import csv
 
 class ToolCallLog:
-    """In-memory log of all tool calls. Acts as a simple DB."""
+    """In-memory + CSV log of all tool calls."""
 
-    def __init__(self):
+    def __init__(self, log_dir: str = None):
         self.calls: list[dict] = []
+        self.log_dir = log_dir or os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tool_logs"
+        )
+        os.makedirs(self.log_dir, exist_ok=True)
 
     def log(self, tool_name: str, args: dict, result: dict) -> str:
-        """Log a tool call and return a call_id."""
+        """Log a tool call to memory + CSV file."""
         call_id = hashlib.sha256(
             f"{tool_name}{json.dumps(args, sort_keys=True)}{time.time()}".encode()
         ).hexdigest()[:12]
@@ -32,11 +39,21 @@ class ToolCallLog:
         entry = {
             "call_id": call_id,
             "tool": tool_name,
-            "args": args,
-            "result": result,
+            "args": json.dumps(args),
+            "result": json.dumps(result),
             "timestamp": datetime.now().isoformat(),
         }
         self.calls.append(entry)
+
+        # Write to tool-specific CSV
+        csv_path = os.path.join(self.log_dir, f"{tool_name}.csv")
+        file_exists = os.path.exists(csv_path)
+        with open(csv_path, "a", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["call_id", "tool", "args", "result", "timestamp"])
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(entry)
+
         return call_id
 
     def get_all(self) -> list[dict]:
