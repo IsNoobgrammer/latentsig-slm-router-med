@@ -1,6 +1,6 @@
 # Fine-Tuning Guide — LatentSig Medical Triage Router
 
-> **Model:** Qwen3-4B-Instruct-2507
+> **Model:** Qwen3-4B-Instruct
 > **Method:** QLoRA (4-bit) via Unsloth
 > **Hardware:** Google Colab T4 GPU (16GB VRAM)
 > **Dataset:** [fhai50032/latentsig-med-triage-router](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router)
@@ -73,12 +73,12 @@ print(f"Columns: {ds.column_names}")
 
 ---
 
-## Step 3: Format as Chat Messages
+## Step 3: Format as Chat Messages (Qwen3 Template)
 
 The system prompt with tool definitions is the SAME for all samples. The model learns to read tool defs and select the correct one.
 
 ```python
-# System prompt (same for all samples — from src/prompts.py)
+# System prompt (from src/prompts.py)
 SYSTEM_PROMPT = """You are LatentSig Medical Triage Router, a structured tool-calling assistant built by LatentSig.
 
 You ONLY produce tool calls when given this exact system prompt. If you are not given tool definitions, do NOT attempt to call tools.
@@ -149,18 +149,27 @@ Do NOT provide medical advice, diagnoses, or treatment recommendations.
 Only route to the appropriate tool based on the symptoms described."""
 
 
-def format_chat(row):
-    """Format as chat messages for SFT training."""
-    return {
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": row["user_query"]},
-            {"role": "assistant", "content": row["response"]},
-        ]
-    }
+def format_to_text(row):
+    """Convert to Qwen3 chat template format."""
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": row["user_query"]},
+        {"role": "assistant", "content": row["response"]},
+    ]
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=False,  # Include assistant response in training
+    )
+    return {"text": text}
 
-ds = ds.map(format_chat, remove_columns=ds.column_names)
-print(f"Formatted: {ds[0]['messages'][0]['role']}, {ds[0]['messages'][1]['role']}, {ds[0]['messages'][2]['role']}")
+# Apply — removes all original columns, keeps only "text"
+ds = ds.map(format_to_text, remove_columns=ds.column_names)
+
+# Verify one sample
+print(ds[0]["text"][:200])
+print("...")
+print(f"Dataset: {len(ds)} samples, columns: {ds.column_names}")
 ```
 
 ---
