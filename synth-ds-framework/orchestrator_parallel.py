@@ -457,13 +457,11 @@ class ParallelOrchestrator:
             verification = self.verifier.verify(user_query, raw_response, target_tool)
             verdict = verification["verdict"]
 
-            # Dedup
+            # Dedup — check if this (query, verdict) already exists
             h = compute_hash(user_query, verdict)
             if self.hash_store.is_duplicate(h):
                 self.stats.increment("duplicates")
                 return False
-
-            self.hash_store.add(h)
 
             # Track stats
             self.stats.increment("passed" if verdict == "pass" else "failed_" + (
@@ -476,9 +474,12 @@ class ParallelOrchestrator:
             else:
                 self.stats.increment("hi_en_count")
 
-            # Save
+            # Only save pass samples
             if save_only_pass and verdict != "pass":
                 return False
+
+            # NOW add hash to seen set (only after we know it's saved)
+            self.hash_store.add(h)
 
             parsed = verification["parsed"] or {}
             record = {
