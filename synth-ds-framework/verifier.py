@@ -134,36 +134,65 @@ def verify_semantic(
 
 # ── Phase 3: LLM Judge (Mistral-small) ──────────────────────
 
-JUDGE_PROMPT = """You are a medical triage judge. Evaluate if the triage decision is appropriate for the patient query.
+JUDGE_PROMPT = """You are a medical triage judge. Your job is to independently evaluate whether the triage decision is correct for the given patient query.
 
 PATIENT QUERY:
 {query}
 
-TRIAGE DECISION:
+TRIAGE DECISION (model output):
 {response}
 
-Evaluate:
-1. Is the category (emergency/urgent/semi_urgent/routine) appropriate for these symptoms?
-2. Is the selected tool reasonable for this scenario?
-3. Are the tool arguments filled correctly?
-4. Is the reasoning clinically sound?
+AVAILABLE TOOLS (for reference):
+{tool_list}
+
+EVALUATION CRITERIA (check each one):
+1. TOOL SELECTION: Is the selected tool the MOST appropriate for this query? Consider:
+   - emergency_dispatch → ONLY for life-threatening conditions (stroke, MI, anaphylaxis, cardiac arrest, severe trauma, respiratory failure)
+   - triage_assessment → Initial symptom evaluation for non-emergency cases
+   - vital_signs_analysis → When the query mentions specific vital signs (BP, HR, temp, SpO2, RR) that need interpretation
+   - medication_check → When the query is about drug interactions, dosage errors, contraindications, or overdose
+   - specialist_referral → When symptoms suggest a condition needing specialist evaluation (not emergency)
+   - mental_health_triage → When the query involves suicidal ideation, self-harm, psychosis, severe anxiety/panic
+   - lab_order_suggestion → When symptoms suggest need for diagnostic tests (fatigue + pallor, weight loss, recurrent infections)
+
+2. CATEGORY: Is the category correct?
+   - emergency → immediate life threat
+   - urgent → serious, needs care within hours
+   - semi_urgent → needs care within 24 hours
+   - routine → can wait for scheduled appointment
+
+3. ARGUMENTS: Are the tool arguments correct and complete for the selected tool?
+
+4. REASONING: Is the clinical reasoning sound and consistent with the tool choice?
+
+IMPORTANT: If ANY of the above criteria fail, the verdict must be "fail". Be strict — this data will be used to train a medical AI.
 
 Respond with ONLY a JSON object:
-{{"verdict": "pass" or "fail", "reason": "brief explanation"}}"""
+{{"verdict": "pass" or "fail", "reason": "brief explanation focusing on what passed or failed"}}"""
 
 
 def verify_llm_judge(
     query: str,
     response: str,
     api_key: str,
+    tool_schemas: dict = None,
     model: str = "mistral-small-latest",
     max_retries: int = 2,
 ) -> tuple[bool, str, str]:
-    """Phase 3: LLM-as-judge using Mistral.
+    """Phase 3: LLM-as-judge using Mistral. Does NOT know the target tool.
 
     Returns (passed, judge_model_id, judge_reasoning).
     """
-    prompt = JUDGE_PROMPT.format(query=query, response=response)
+    # Build tool list for the judge (so it knows what tools exist)
+    if tool_schemas:
+        tool_lines = []
+        for name, schema in tool_schemas.items():
+            tool_lines.append(f"- {name}: {schema['description']}")
+        tool_list = "\n".join(tool_lines)
+    else:
+        tool_list = "(tool list not provided)"
+
+    prompt = JUDGE_PROMPT.format(query=query, response=response, tool_list=tool_list)
     body = json.dumps({
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -257,10 +286,10 @@ class Verifier:
             result["verdict"] = "fail"
             return result
 
-        # Phase 3: LLM Judge
+        # Phase 3: LLM Judge (does NOT know target tool — unbiased)
         key = self._next_key()
         judge_ok, judge_model, reason = verify_llm_judge(
-            query, raw_response, key, self.judge_model
+            query, raw_response, key, self.tool_schemas, self.judge_model
         )
         result["llm_judge"] = {"passed": judge_ok, "model": judge_model, "reason": reason}
 
