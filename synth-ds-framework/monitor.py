@@ -272,6 +272,251 @@ def api_recent():
     return jsonify(records)
 
 
+# ── Dataset Viewer ───────────────────────────────────────────
+
+VIEWER_HTML = """<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>LatentSig Dataset Viewer</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
+  h1 { color: #58a6ff; margin-bottom: 16px; font-size: 1.4em; }
+  .nav { margin-bottom: 16px; }
+  .nav a { color: #58a6ff; text-decoration: none; margin-right: 16px; font-weight: 600; }
+  .nav a:hover { text-decoration: underline; }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .controls select, .controls input { background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 6px 10px; font-size: 0.9em; }
+  .controls input[type="text"] { width: 300px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+  .badge-emergency { background: #f8514922; color: #f85149; }
+  .badge-urgent { background: #d2992222; color: #d29922; }
+  .badge-semi_urgent { background: #58a6ff22; color: #58a6ff; }
+  .badge-routine { background: #3fb95022; color: #3fb950; }
+  .badge-pass { background: #3fb95022; color: #3fb950; }
+  .badge-fail { background: #f8514922; color: #f85149; }
+  .badge-en { background: #58a6ff22; color: #58a6ff; }
+  .badge-hi_en { background: #bc8cff22; color: #bc8cff; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+  th { text-align: left; padding: 8px; border-bottom: 2px solid #30363d; color: #8b949e; cursor: pointer; user-select: none; position: sticky; top: 0; background: #0d1117; }
+  th:hover { color: #58a6ff; }
+  th.sorted-asc::after { content: ' ▲'; color: #58a6ff; }
+  th.sorted-desc::after { content: ' ▼'; color: #58a6ff; }
+  td { padding: 6px 8px; border-bottom: 1px solid #21262d; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tr:hover { background: #161b22; }
+  .query-cell { max-width: 350px; }
+  .response-cell { max-width: 250px; font-family: monospace; font-size: 0.85em; }
+  .footer { color: #484f58; font-size: 0.8em; text-align: center; margin-top: 16px; }
+  .count { color: #8b949e; font-size: 0.9em; margin-bottom: 8px; }
+  .json-view { background: #161b22; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 0.85em; white-space: pre-wrap; max-height: 300px; overflow: auto; display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; border: 1px solid #30363d; min-width: 500px; max-width: 80vw; }
+  .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99; }
+</style>
+</head><body>
+<div class="nav">
+  <a href="/">Dashboard</a>
+  <a href="/viewer">Dataset Viewer</a>
+  <a href="/api/stats">API Stats</a>
+</div>
+<h1>Dataset Viewer</h1>
+
+<div class="controls">
+  <input type="text" id="search" placeholder="Search queries..." oninput="filterTable()">
+  <select id="filterLang" onchange="filterTable()">
+    <option value="">All Languages</option>
+    <option value="en">English</option>
+    <option value="hi_en">Hinglish</option>
+  </select>
+  <select id="filterCategory" onchange="filterTable()">
+    <option value="">All Categories</option>
+    <option value="emergency">Emergency</option>
+    <option value="urgent">Urgent</option>
+    <option value="semi_urgent">Semi-Urgent</option>
+    <option value="routine">Routine</option>
+  </select>
+  <select id="filterTool" onchange="filterTable()">
+    <option value="">All Tools</option>
+  </select>
+  <select id="filterVerdict" onchange="filterTable()">
+    <option value="">All Verdicts</option>
+    <option value="pass">Pass</option>
+    <option value="fail">Fail</option>
+  </select>
+  <select id="filterModel" onchange="filterTable()">
+    <option value="">All Models</option>
+  </select>
+</div>
+<div class="count" id="rowCount"></div>
+
+<table id="dataTable">
+  <thead>
+    <tr>
+      <th data-col="idx" data-type="num">#</th>
+      <th data-col="query" data-type="str">Query</th>
+      <th data-col="tool" data-type="str">Tool</th>
+      <th data-col="category" data-type="str">Category</th>
+      <th data-col="department" data-type="str">Department</th>
+      <th data-col="language" data-type="str">Lang</th>
+      <th data-col="verdict" data-type="str">Verdict</th>
+      <th data-col="model" data-type="str">Model</th>
+      <th data-col="judge" data-type="str">Judge</th>
+      <th>Response</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<div class="overlay" id="overlay" onclick="closeJson()"></div>
+<div class="json-view" id="jsonView"></div>
+
+<div class="footer">Total: <span id="totalRecords">0</span> records</div>
+
+<script>
+let DATA = [];
+let sortCol = null;
+let sortDir = 'asc';
+
+async function loadData() {
+  const resp = await fetch('/api/dataset');
+  DATA = await resp.json();
+  populateFilters();
+  renderTable();
+}
+
+function populateFilters() {
+  const tools = new Set();
+  const models = new Set();
+  DATA.forEach(r => {
+    if (r.tool) tools.add(r.tool);
+    if (r.model) models.add(r.model);
+  });
+  const toolSel = document.getElementById('filterTool');
+  tools.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; toolSel.appendChild(o); });
+  const modelSel = document.getElementById('filterModel');
+  models.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; modelSel.appendChild(o); });
+}
+
+function getFiltered() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const lang = document.getElementById('filterLang').value;
+  const cat = document.getElementById('filterCategory').value;
+  const tool = document.getElementById('filterTool').value;
+  const verdict = document.getElementById('filterVerdict').value;
+  const model = document.getElementById('filterModel').value;
+
+  return DATA.filter(r => {
+    if (search && !r.query.toLowerCase().includes(search)) return false;
+    if (lang && r.language !== lang) return false;
+    if (cat && r.category !== cat) return false;
+    if (tool && r.tool !== tool) return false;
+    if (verdict && r.verdict !== verdict) return false;
+    if (model && r.model !== model) return false;
+    return true;
+  });
+}
+
+function renderTable() {
+  let filtered = getFiltered();
+
+  if (sortCol) {
+    filtered.sort((a, b) => {
+      let va = a[sortCol] || '', vb = b[sortCol] || '';
+      if (typeof va === 'number') return sortDir === 'asc' ? va - vb : vb - va;
+      va = String(va).toLowerCase(); vb = String(vb).toLowerCase();
+      return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+  }
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  filtered.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td class="query-cell" title="${esc(r.query)}">${esc(r.query)}</td>
+      <td>${esc(r.tool)}</td>
+      <td><span class="badge badge-${r.category}">${r.category}</span></td>
+      <td>${esc(r.department)}</td>
+      <td><span class="badge badge-${r.language}">${r.language}</span></td>
+      <td><span class="badge badge-${r.verdict}">${r.verdict}</span></td>
+      <td style="font-size:0.8em">${esc(r.model)}</td>
+      <td style="font-size:0.8em">${esc(r.judge)}</td>
+      <td><span class="response-cell" onclick='showJson(${JSON.stringify(r.parsed_response)})' style="cursor:pointer;color:#58a6ff">view</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('rowCount').textContent = `Showing ${filtered.length} of ${DATA.length} records`;
+  document.getElementById('totalRecords').textContent = DATA.length;
+}
+
+function filterTable() { renderTable(); }
+
+function sortTable(col, type) {
+  document.querySelectorAll('th').forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+  if (sortCol === col) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+  else { sortCol = col; sortDir = 'asc'; }
+  const th = document.querySelector(`th[data-col="${col}"]`);
+  if (th) th.classList.add(`sorted-${sortDir}`);
+  renderTable();
+}
+
+function showJson(obj) {
+  const el = document.getElementById('jsonView');
+  el.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+  el.style.display = 'block';
+  document.getElementById('overlay').style.display = 'block';
+}
+
+function closeJson() {
+  document.getElementById('jsonView').style.display = 'none';
+  document.getElementById('overlay').style.display = 'none';
+}
+
+function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Sort on header click
+document.querySelectorAll('th[data-col]').forEach(th => {
+  th.addEventListener('click', () => sortTable(th.dataset.col, th.dataset.type));
+});
+
+loadData();
+</script>
+</body></html>"""
+
+
+@app.route("/viewer")
+def viewer():
+    from flask import render_template_string
+    return render_template_string(VIEWER_HTML)
+
+
+@app.route("/api/dataset")
+def api_dataset():
+    """Full dataset for the viewer."""
+    records = read_dataset(limit=100000)
+    result = []
+    for i, r in enumerate(records):
+        parsed = {}
+        try:
+            parsed = json.loads(r.get("parsed_response", "{}"))
+        except:
+            pass
+        result.append({
+            "idx": i + 1,
+            "query": r.get("user_query", ""),
+            "tool": parsed.get("tool", ""),
+            "category": parsed.get("category", ""),
+            "department": parsed.get("department", ""),
+            "language": r.get("language", ""),
+            "verdict": r.get("judge_verdict", ""),
+            "model": r.get("generation_model_id", ""),
+            "judge": r.get("llm_judge_id", ""),
+            "parsed_response": parsed,
+            "hash": r.get("hash", ""),
+        })
+    return jsonify(result)
+
+
 if __name__ == "__main__":
     import argparse
 

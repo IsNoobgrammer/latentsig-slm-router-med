@@ -14,7 +14,7 @@ import os
 import random
 import urllib.request
 import urllib.error
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, wait, FIRST_COMPLETED
 from threading import Lock
 
 from tool_schemas import TOOL_SCHEMAS
@@ -127,8 +127,13 @@ Make the query:
 - Realistic (like a real patient or nurse would describe)
 - Varied in age, gender, symptoms, severity
 - Include enough detail for triage (age, duration, key symptoms)
-- Cover ALL categories: emergency, urgent, semi_urgent, routine
-- Use natural language, not clinical jargon"""
+- Use natural language, not clinical jargon
+
+IMPORTANT: You MUST generate a query that would specifically require the "{target_tool}" tool.
+The query should be a scenario where this tool is the most appropriate choice.
+
+Tool descriptions:
+{tool_descriptions}"""
 
 HINGLISH_QUERY_GEN_SYSTEM = '''You are a Hinglish medical scenario generator. Convert the given English medical query to natural Hinglish (Hindi written in Roman script, mixed with English medical terms).
 
@@ -152,12 +157,24 @@ Hinglish: "bacche ne nigal liya coin, khasi aa rahi hai aur ulti jaisa feel ho r
 
 # ── Generator Functions ──────────────────────────────────────
 
-def generate_query(key: str, model: str, category_hint: str = None) -> tuple[str, float, str]:
+def generate_query(key: str, model: str, category_hint: str = None, target_tool: str = None) -> tuple[str, float, str]:
     hint = ""
     if category_hint:
         hint = f"\nGenerate a {category_hint} level case."
 
-    messages = [{"role": "user", "content": QUERY_GEN_SYSTEM + hint}]
+    # Build tool descriptions for the prompt
+    tool_descs = []
+    for name, schema in TOOL_SCHEMAS.items():
+        params = ", ".join(f"{k}: {v}" for k, v in schema["parameters"].items())
+        tool_descs.append(f"- {name}({params}): {schema['description']}")
+    tool_descriptions = "\n".join(tool_descs)
+
+    prompt = QUERY_GEN_SYSTEM.format(
+        target_tool=target_tool or "triage_assessment",
+        tool_descriptions=tool_descriptions,
+    ) + hint
+
+    messages = [{"role": "user", "content": prompt}]
     content, latency, model_used = call_mistral(key, messages, model=model, temperature=0.9)
     try:
         data = json.loads(content)
@@ -318,6 +335,22 @@ class ParallelOrchestrator:
         self.writer = DatasetWriter(DATASET_PATH)
         self.stats = LiveStats(STATS_PATH)
         self.workers = workers
+        self._tool_counts = {t: 0 for t in TOOL_SCHEMAS}
+        self._tool_lock = Lock()
+
+    def _pick_target_tool(self) -> str:
+        """Pick the least-used tool to ensure balanced coverage."""
+        with self._tool_lock:
+            # Weighted random: inverse of count (least used = highest weight)
+            tools = list(self._tool_counts.keys())
+            counts = [self._tool_counts[t] for t in tools]
+            min_count = min(counts) if counts else 0
+            # Weight = 1 + (max - count) so least-used tools get highest weight
+            max_count = max(counts) if counts else 0
+            weights = [1 + (max_count - c) for c in counts]
+            chosen = random.choices(tools, weights=weights, k=1)[0]
+            self._tool_counts[chosen] += 1
+            return chosen
 
     def _scan_existing(self) -> tuple[int, int, int]:
         en_count = 0
@@ -344,15 +377,21 @@ class ParallelOrchestrator:
                     continue
         return en_count, hi_en_count, total
 
-    def _generate_one(self, language: str, save_only_pass: bool) -> bool:
-        """Generate one sample. Returns True if a record was saved."""
+    def _generate_one(self, language: str, save_only_pass: bool, target_tool: str = None) -> bool:
+        """Generate one sample. Returns True if a record was saved.
+
+        Args:
+            target_tool: If set, generate a query that would use this specific tool.
+        """
         try:
             gen_model = random.choice(GENERATION_MODELS)
             key1 = self.keys.next()
 
-            # Generate query
+            # Generate query targeted at a specific tool
             category_hint = random.choice(["emergency", "urgent", "semi_urgent", "routine"])
-            en_query, _, _ = generate_query(key1, gen_model, category_hint)
+            if target_tool is None:
+                target_tool = self._pick_target_tool()
+            en_query, _, _ = generate_query(key1, gen_model, category_hint, target_tool)
 
             if language == "hi_en":
                 key2 = self.keys.next()
@@ -457,62 +496,76 @@ class ParallelOrchestrator:
         start_time = time.time()
         last_print = start_time
 
-        # Build task queue: list of (language, save_only_pass)
-        tasks = []
-        for _ in range(remaining_en):
-            tasks.append("en")
-        for _ in range(remaining_hi):
-            tasks.append("hi_en")
-        random.shuffle(tasks)  # Mix languages for variety
+        # Dynamic loop: keep generating until actual counts hit targets
+        # Dupe/error/fail → slot is replaced, counter never resets
+        with ThreadPoolExecutor(max_workers=self.workers) as executor:
+            futures = {}
+            submitted_en = 0
+            submitted_hi = 0
 
-        # Process in batches
-        batch_size = self.workers * 2  # Oversubscribe slightly
-        task_idx = 0
+            while True:
+                s = self.stats.get()
+                done_en = s["en_count"] >= target_en
+                done_hi = s["hi_en_count"] >= target_hi_en
 
-        while task_idx < len(tasks):
-            # Check if we've hit targets
-            s = self.stats.get()
-            if s["en_count"] >= target_en and s["hi_en_count"] >= target_hi_en:
-                break
+                if done_en and done_hi:
+                    break
 
-            # Submit a batch
-            batch_end = min(task_idx + batch_size, len(tasks))
-            batch = tasks[task_idx:batch_end]
-            task_idx = batch_end
+                # Submit new tasks up to worker count
+                while len(futures) < self.workers:
+                    s = self.stats.get()
+                    need_en = s["en_count"] + sum(1 for f, l in futures.items() if l == "en" and not f.done()) < target_en
+                    need_hi = s["hi_en_count"] + sum(1 for f, l in futures.items() if l == "hi_en" and not f.done()) < target_hi_en
 
-            # Filter out tasks for already-met language targets
-            filtered = []
-            for lang in batch:
-                if lang == "en" and s["en_count"] + sum(1 for l in filtered if l == "en") < target_en:
-                    filtered.append(lang)
-                elif lang == "hi_en" and s["hi_en_count"] + sum(1 for l in filtered if l == "hi_en") < target_hi_en:
-                    filtered.append(lang)
+                    if not need_en and not need_hi:
+                        break
 
-            if not filtered:
-                continue
+                    # Pick language with more remaining
+                    lang = None
+                    if need_en and need_hi:
+                        en_gap = target_en - s["en_count"]
+                        hi_gap = target_hi_en - s["hi_en_count"]
+                        lang = "en" if en_gap >= hi_gap else "hi_en"
+                    elif need_en:
+                        lang = "en"
+                    elif need_hi:
+                        lang = "hi_en"
 
-            with ThreadPoolExecutor(max_workers=self.workers) as executor:
-                futures = {
-                    executor.submit(self._generate_one, lang, save_only_pass): lang
-                    for lang in filtered
-                }
-                for future in as_completed(futures):
+                    if lang is None:
+                        break
+
+                    future = executor.submit(self._generate_one, lang, save_only_pass)
+                    futures[future] = lang
+
+                # Wait for at least one to finish
+                if not futures:
+                    time.sleep(0.5)
+                    continue
+
+                done, _ = wait(futures.keys(), timeout=60, return_when=FIRST_COMPLETED)
+
+                if not done:
+                    # Timeout — keep waiting
+                    continue
+
+                for future in done:
+                    futures.pop(future, None)
                     try:
                         future.result()
                     except:
                         pass
 
-            # Progress
-            now = time.time()
-            if now - last_print >= 5:
-                s = self.stats.get()
-                print(
-                    f"  [{s['elapsed']}s] EN={s['en_count']}/{target_en} HI={s['hi_en_count']}/{target_hi_en} "
-                    f"passed={s['passed']} struct={s['failed_structural']} sem={s['failed_semantic']} "
-                    f"judge={s['failed_judge']} dupes={s['duplicates']} errors={s['errors']} "
-                    f"rate={s['rate']}/s ETA={s['eta_seconds']}s"
-                )
-                last_print = now
+                # Progress
+                now = time.time()
+                if now - last_print >= 5:
+                    s = self.stats.get()
+                    print(
+                        f"  [{s['elapsed']}s] EN={s['en_count']}/{target_en} HI={s['hi_en_count']}/{target_hi_en} "
+                        f"passed={s['passed']} struct={s['failed_structural']} sem={s['failed_semantic']} "
+                        f"judge={s['failed_judge']} dupes={s['duplicates']} errors={s['errors']} "
+                        f"rate={s['rate']}/s ETA={s['eta_seconds']}s"
+                    )
+                    last_print = now
 
         # Final
         s = self.stats.get()
