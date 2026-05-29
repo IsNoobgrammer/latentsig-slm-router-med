@@ -403,8 +403,8 @@ class ParallelOrchestrator:
             key3 = self.keys.next()
             raw_response, _, _ = generate_response(key3, self.system_prompt, user_query, gen_model)
 
-            # Verify
-            verification = self.verifier.verify(user_query, raw_response)
+            # Verify (pass target_tool for enforcement)
+            verification = self.verifier.verify(user_query, raw_response, target_tool)
             verdict = verification["verdict"]
 
             # Dedup

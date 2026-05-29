@@ -72,14 +72,24 @@ def fuzzy_match(expected: str, actual: str, threshold: float = 0.6) -> bool:
 
 
 def verify_semantic(
-    query: str, parsed: TriageResponse, tool_schemas: dict
+    query: str, parsed: TriageResponse, tool_schemas: dict, target_tool: str = None
 ) -> tuple[bool, list[str]]:
     """Phase 2: Check if response makes sense for the query.
+
+    Args:
+        target_tool: If set, the model MUST use this tool. Hard fail if mismatch.
 
     Returns (passed, warnings).
     """
     warnings = []
     query_lower = query.lower()
+
+    # HARD CHECK: target tool enforcement (fast, deterministic)
+    if target_tool and parsed.tool != target_tool:
+        warnings.append(
+            f"TARGET TOOL MISMATCH: expected '{target_tool}', got '{parsed.tool}'"
+        )
+        return False, warnings
 
     # Check category vs query keywords
     has_emergency = any(kw in query_lower for kw in EMERGENCY_KEYWORDS)
@@ -207,8 +217,11 @@ class Verifier:
         self._key_idx += 1
         return key
 
-    def verify(self, query: str, raw_response: str) -> dict:
+    def verify(self, query: str, raw_response: str, target_tool: str = None) -> dict:
         """Run all 3 verification phases.
+
+        Args:
+            target_tool: If set, enforce that the model used this specific tool.
 
         Returns:
             {
@@ -238,7 +251,7 @@ class Verifier:
         result["parsed"] = parsed.model_dump()
 
         # Phase 2: Semantic
-        sem_ok, warnings = verify_semantic(query, parsed, self.tool_schemas)
+        sem_ok, warnings = verify_semantic(query, parsed, self.tool_schemas, target_tool)
         result["semantic"] = {"passed": sem_ok, "warnings": warnings}
         if not sem_ok:
             result["verdict"] = "fail"
