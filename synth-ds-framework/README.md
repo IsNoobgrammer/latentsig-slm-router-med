@@ -17,11 +17,6 @@ license: mit
 pretty_name: LatentSig Medical Triage Router Dataset
 size_categories:
   - 1K<n<10K
-configs:
-- config_name: default
-  data_files:
-  - split: train
-    path: data/train-*
 ---
 
 # LatentSig Medical Triage Router Dataset
@@ -199,7 +194,6 @@ TOOL_SCHEMAS = {
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `system_prompt` | `str` | Full system prompt with tool definitions (same for all samples) |
 | `user_query` | `str` | Patient symptom description (English or Hinglish) |
 | `response` | `str` | Raw JSON tool-call output from the model |
 | `parsed_response` | `str` | Parsed JSON dict of the response |
@@ -210,6 +204,8 @@ TOOL_SCHEMAS = {
 | `llm_judge_id` | `str` | Which model judged the sample (`mistral-small-latest`) |
 | `judge_verdict` | `str` | `pass` or `fail` |
 | `hash` | `str` | SHA-256 hash for deduplication |
+
+> **Note:** `system_prompt` (with tool definitions) is the same for all samples. It is provided in `tool_schemas.py` to avoid bloating the dataset file.
 
 ### Output Format (what the fine-tuned model must produce)
 
