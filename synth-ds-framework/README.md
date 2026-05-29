@@ -1,4 +1,40 @@
 ---
+dataset_info:
+  features:
+  - name: system_prompt
+    dtype: string
+  - name: user_query
+    dtype: string
+  - name: response
+    dtype: string
+  - name: parsed_response
+    dtype: string
+  - name: tool_called
+    dtype: string
+  - name: category
+    dtype: string
+  - name: generation_model_id
+    dtype: string
+  - name: language
+    dtype: string
+  - name: llm_judge_id
+    dtype: string
+  - name: judge_verdict
+    dtype: string
+  - name: hash
+    dtype: string
+  splits:
+  - name: train
+    num_bytes: 4575000
+    num_examples: 1000
+  download_size: 4575000
+  dataset_size: 4575000
+configs:
+- config_name: default
+  data_files:
+  - split: train
+    path: data/train-*
+license: mit
 language:
   - en
   - hi
@@ -13,7 +49,6 @@ tags:
   - hinglish
   - slm
   - fine-tuning
-license: mit
 pretty_name: LatentSig Medical Triage Router Dataset
 size_categories:
   - 1K<n<10K
@@ -89,29 +124,7 @@ Hinglish queries are slightly longer on average (179 vs 156 chars) due to Hindi 
 
 Every sample passed a **3-layer verification pipeline** before inclusion:
 
-### Verification Pipeline Flowchart
-
-> **[Open interactive diagram](https://excalidraw.com)** — download and drag-drop `verification_pipeline.excalidraw` onto excalidraw.com
-
-![Verification Pipeline](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/verification_pipeline.excalidraw)
-
-Download: [`verification_pipeline.excalidraw`](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/verification_pipeline.excalidraw)
-
-```
-Generated Sample
-      |
-      v
-[Phase 1: Pydantic] --Invalid--> Rejected
-      | Valid
-      v
-[Phase 2: Tool Enforcement] --Wrong Tool--> Rejected
-      | Match
-      v
-[Phase 3: LLM Judge] --Fail--> Rejected
-      | Pass
-      v
-Saved to Dataset
-```
+![Verification Pipeline](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/verification_pipeline.png)
 
 | Layer | Method | Purpose | Speed |
 |-------|--------|---------|-------|
@@ -125,37 +138,10 @@ Saved to Dataset
 
 ## Generation Pipeline
 
-### Generation Pipeline Flowchart
-
-> **[Open interactive diagram](https://excalidraw.com)** — download and drag-drop `generation_pipeline.excalidraw` onto excalidraw.com
-
-Download: [`generation_pipeline.excalidraw`](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/generation_pipeline.excalidraw)
-
-```
-Tool Schema Registry (7 tools)
-        |
-        v
-pick_target_tool (weighted random, least-used favored)
-        |
-        v
-Query Generator (mistral-large / medium / magistral)
-        |
-        v (if Hinglish)
-Hinglish Translator
-        |
-        v
-Response Generator (with tool hint: [Use X tool])
-        |
-        v
-3-Layer Verifier (Pydantic + Tool Enforcement + LLM Judge)
-        |
-   Pass |          Fail -> Retry (same target tool)
-        v
-Hash Dedup -> Write JSONL -> Live Stats + Monitor
-```
+![Generation Pipeline](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/generation_pipeline.png)
 
 **Key design decisions:**
-- **Tool-balanced generation:** `_pick_target_tool()` uses weighted random favoring least-used tools
+- **Tool-balanced generation:** `pick_target_tool()` uses weighted random favoring least-used tools
 - **Target tool hint:** Response prompt includes `[Use the X tool]` to ensure clean training data
 - **Retry on failure:** Same target tool retried until verifier passes — counter never resets
 - **Hash dedup on save only:** Failed samples don't block their hash from retrying
@@ -370,10 +356,8 @@ from datasets import load_dataset
 from trl import SFTTrainer, SFTConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Load dataset
 ds = load_dataset("fhai50032/latentsig-med-triage-router", split="train")
 
-# Format as chat messages
 def format_sample(row):
     return {
         "messages": [
@@ -385,11 +369,9 @@ def format_sample(row):
 
 ds = ds.map(format_sample)
 
-# Load model
 model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct")
 tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct")
 
-# Train
 trainer = SFTTrainer(
     model=model,
     train_dataset=ds,
@@ -419,8 +401,6 @@ model = FastLanguageModel.get_peft_model(
     model, r=16, lora_alpha=32,
     target_modules=["q_proj","v_proj","k_proj","o_proj"],
 )
-
-# ... format dataset same as above, then train
 ```
 
 ---
@@ -435,22 +415,22 @@ Hinglish queries use natural Hindi conversational style (Roman script) mixed wit
 | "Persistent cough for 3 weeks" | "3 hafte se khansi aa rahi hai, bukhar nahi hai" |
 | "Child swallowed a coin" | "bacche ne nigal liya coin, khasi aa rahi hai aur ulti jaisa feel ho raha" |
 
-**Output is always English JSON** regardless of input language. This teaches the model: *"even if the query is in Hinglish, route to the same structured English output."*
+**Output is always English JSON** regardless of input language.
 
 ---
 
 ## Intended Use
 
-- **Fine-tuning SLMs** (1B–3B) for structured medical tool calling
-- **Research** on tool-use generalization in small models
-- **Medical AI** prototyping (NOT for production clinical use)
+- Fine-tuning SLMs (1B–3B) for structured medical tool calling
+- Research on tool-use generalization in small models
+- Medical AI prototyping (NOT for production clinical use)
 
 ## Limitations
 
-- **Synthetic data** — generated by LLMs, not real clinical records
-- **7 tools only** — production systems would need 50+ tools
-- **English + Hinglish** — does not cover other Indian languages
-- **Not for clinical deployment** — this is a research prototype
+- Synthetic data — generated by LLMs, not real clinical records
+- 7 tools only — production systems would need 50+ tools
+- English + Hinglish — does not cover other Indian languages
+- Not for clinical deployment — research prototype only
 
 ## Citation
 
