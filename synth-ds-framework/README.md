@@ -1,4 +1,9 @@
 ---
+configs:
+- config_name: default
+  data_files:
+  - split: train
+    path: data/train-*
 language:
   - en
   - hi
