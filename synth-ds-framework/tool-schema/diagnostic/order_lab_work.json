@@ -1,0 +1,38 @@
+{
+  "name": "order_lab_work",
+  "description": "Order laboratory tests for diagnostic workup. Use when symptoms require blood, urine, or other specimen analysis.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "tests": {
+        "type": "array",
+        "items": {"type": "string"},
+        "description": "List of lab tests to order"
+      },
+      "urgency": {
+        "type": "string",
+        "enum": ["stat", "urgent", "routine"],
+        "description": "How quickly results are needed"
+      },
+      "reason": {
+        "type": "string",
+        "description": "Clinical indication for ordering tests"
+      }
+    },
+    "required": ["tests", "urgency"]
+  },
+  "when_to_use": [
+    "unexplained fatigue or weight loss",
+    "suspected infection needing culture",
+    "chronic disease monitoring",
+    "medication level monitoring",
+    "pre-operative workup"
+  ],
+  "examples": [
+    {
+      "query": "Persistent fatigue for 3 weeks, pale skin, 35-year-old female",
+      "args": {"tests": ["CBC", "iron studies", "TSH"], "urgency": "urgent", "reason": "evaluate for anemia"}
+    }
+  ]
+}

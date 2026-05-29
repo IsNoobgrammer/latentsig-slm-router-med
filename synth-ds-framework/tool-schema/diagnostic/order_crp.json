@@ -1,0 +1,26 @@
+{
+  "name": "order_crp",
+  "description": "Orders a C-Reactive Protein (CRP) or high-sensitivity CRP (hs-CRP) test. CRP is an acute-phase reactant that rises with inflammation, infection, and tissue injury. hs-CRP is used for cardiovascular risk assessment.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "test_type": {"type": "string", "description": "Type of CRP test", "enum": ["standard", "high_sensitivity"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering CRP"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected infection or sepsis",
+    "Monitoring inflammatory conditions (RA, IBD, lupus)",
+    "Post-operative infection monitoring",
+    "Cardiovascular risk assessment (hs-CRP)",
+    "Monitoring response to anti-inflammatory treatment"
+  ],
+  "examples": [
+    {"query": "Order CRP", "args": {"patient_id": "P12345"}},
+    {"query": "Check high-sensitivity CRP for cardiac risk", "args": {"patient_id": "P12345", "test_type": "high_sensitivity", "clinical_indication": "cardiovascular risk assessment"}}
+  ]
+}

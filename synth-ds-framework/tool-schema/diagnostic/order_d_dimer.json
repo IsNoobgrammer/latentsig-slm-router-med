@@ -1,0 +1,26 @@
+{
+  "name": "order_d_dimer",
+  "description": "Orders a D-dimer test, a fibrin degradation product used primarily to rule out venous thromboembolism (VTE). A negative D-dimer has high negative predictive value for DVT and pulmonary embolism.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering D-dimer"},
+      "wells_score": {"type": "string", "description": "Wells score for DVT/PE if available (low/moderate/high)"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected deep vein thrombosis (DVT)",
+    "Suspected pulmonary embolism (PE)",
+    "Low-to-interate pretest probability for VTE",
+    "DIC evaluation",
+    "Monitoring fibrinolytic therapy"
+  ],
+  "examples": [
+    {"query": "Order D-dimer", "args": {"patient_id": "P12345"}},
+    {"query": "Check D-dimer to rule out PE", "args": {"patient_id": "P12345", "urgency": "stat", "clinical_indication": "acute dyspnea and pleuritic chest pain"}}
+  ]
+}

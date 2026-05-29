@@ -1,0 +1,26 @@
+{
+  "name": "order_liver_function_panel",
+  "description": "Orders Liver Function Tests (LFTs) including ALT, AST, ALP, total bilirubin, direct bilirubin, albumin, and total protein. Used to evaluate hepatic function, detect liver injury, and monitor liver disease progression.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering LFTs"},
+      "include_ggt": {"type": "string", "description": "Whether to include gamma-glutamyl transferase", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected liver disease or hepatitis",
+    "Monitoring hepatotoxic medication effects",
+    "Jaundice evaluation",
+    "Abdominal pain with suspected hepatobiliary involvement",
+    "Chronic alcohol use assessment"
+  ],
+  "examples": [
+    {"query": "Check liver function for this patient", "args": {"patient_id": "P12345"}},
+    {"query": "Order LFTs stat, patient is jaundiced", "args": {"patient_id": "P12345", "urgency": "stat", "clinical_indication": "new-onset jaundice"}}
+  ]
+}

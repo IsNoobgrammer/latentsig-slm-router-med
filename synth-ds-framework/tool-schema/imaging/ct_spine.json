@@ -1,0 +1,29 @@
+{
+  "name": "ct_spine",
+  "description": "Order a CT spine (cervical, thoracic, or lumbar) to evaluate fractures, alignment, spinal canal stenosis, and post-operative hardware.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["spine-cervical", "spine-thoracic", "spine-lumbar"], "description": "Spinal region to image"},
+      "modality": {"type": "string", "enum": ["ct"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast", "both"], "description": "Contrast requirement"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., spinal trauma, stenosis, post-op evaluation)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected spinal fracture after trauma (CT is more sensitive than X-ray)",
+    "assessment of spinal canal stenosis and neural foraminal narrowing",
+    "post-operative evaluation of spinal hardware and fusion",
+    "pre-operative planning for spinal surgery",
+    "suspected spinal metastatic disease or infection"
+  ],
+  "examples": [
+    {
+      "query": "Fall from height, midline thoracolumbar tenderness, neurologic deficit",
+      "args": {"region": "spine-thoracic", "modality": "ct", "contrast": "without_contrast", "urgency": "stat", "clinical_indication": "thoracolumbar trauma, rule out burst fracture"}
+    }
+  ]
+}

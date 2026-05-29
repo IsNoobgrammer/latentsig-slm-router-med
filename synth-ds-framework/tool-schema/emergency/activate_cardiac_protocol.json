@@ -1,0 +1,29 @@
+{
+  "name": "activate_cardiac_protocol",
+  "description": "Activate the acute cardiac emergency protocol (Code STEMI or cardiac alert) for time-critical cardiac intervention",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "cardiac_event_type": {"type": "string", "description": "Type of cardiac event", "enum": ["stemi", "nstemi", "unstable_angina", "cardiac_arrest", "arrhythmia_urgent", "acute_heart_failure"]},
+      "chest_pain_onset": {"type": "string", "description": "Time of chest pain onset (ISO 8601)"},
+      "ecg_findings": {"type": "string", "description": "ECG interpretation", "enum": ["st_elevation", "st_depression", "t_wave_inversion", "new_left_bundle_branch_block", "ventricular_tachycardia", "ventricular_fibrillation", "asystole", "pulseless_electrical_activity"]},
+      "troponin_level": {"type": "string", "description": "Troponin level if available"},
+      "hemodynamic_status": {"type": "string", "description": "Hemodynamic status", "enum": ["stable", "hypotensive", "cardiogenic_shock", "cardiac_arrest"]},
+      "cath_lab_activation": {"type": "boolean", "description": "Whether cardiac catheterization lab needs activation"}
+    },
+    "required": ["patient_id", "cardiac_event_type", "ecg_findings"]
+  },
+  "when_to_use": [
+    "ECG showing ST-elevation consistent with STEMI",
+    "Cardiac arrest with shockable rhythm requiring emergent intervention",
+    "Acute coronary syndrome with hemodynamic instability",
+    "New-onset heart failure with pulmonary edema requiring urgent intervention",
+    "Sustained ventricular tachycardia unresponsive to initial treatment"
+  ],
+  "examples": [
+    {"query": "ECG shows anterolateral ST elevation, patient has crushing chest pain since 45 minutes ago", "args": {"patient_id": "P20001", "cardiac_event_type": "stemi", "ecg_findings": "st_elevation", "chest_pain_onset": "2026-05-29T10:15:00Z", "hemodynamic_status": "stable", "cath_lab_activation": true}},
+    {"query": "Patient in cardiac arrest, VF on monitor, CPR in progress", "args": {"patient_id": "P20002", "cardiac_event_type": "cardiac_arrest", "ecg_findings": "ventricular_fibrillation", "hemodynamic_status": "cardiac_arrest"}}
+  ]
+}

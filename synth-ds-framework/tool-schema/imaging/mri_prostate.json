@@ -1,0 +1,30 @@
+{
+  "name": "mri_prostate",
+  "description": "Order a prostate MRI (multiparametric MRI — mpMRI) for prostate cancer detection, localization, and staging using PI-RADS scoring.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["pelvis"], "description": "Body region to image — focused on the prostate gland"},
+      "modality": {"type": "string", "enum": ["mri"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast"], "description": "Contrast requirement — mpMRI includes both pre- and post-contrast sequences"},
+      "study_type": {"type": "string", "enum": ["detection", "staging", "active_surveillance", "recurrence"], "description": "Prostate MRI indication"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., elevated PSA, prior negative biopsy, staging)"}
+    },
+    "required": ["region", "modality", "study_type"]
+  },
+  "when_to_use": [
+    "elevated PSA with prior negative systematic biopsy (MRI-guided targeted biopsy)",
+    "initial prostate cancer detection before first biopsy",
+    "active surveillance of low-risk prostate cancer",
+    "pre-treatment local staging of known prostate cancer",
+    "suspected biochemical recurrence after treatment"
+  ],
+  "examples": [
+    {
+      "query": "62-year-old male with PSA 8.5, prior negative 12-core biopsy",
+      "args": {"region": "pelvis", "modality": "mri", "contrast": "with_contrast", "study_type": "detection", "urgency": "routine", "clinical_indication": "elevated PSA with prior negative biopsy, MRI for targeted biopsy planning"}
+    }
+  ]
+}

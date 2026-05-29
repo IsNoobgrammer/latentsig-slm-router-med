@@ -1,0 +1,31 @@
+{
+  "name": "perform_pericardiocentesis",
+  "description": "Perform emergent pericardiocentesis to drain pericardial fluid causing cardiac tamponade",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "indication": {"type": "string", "description": "Indication for pericardiocentesis", "enum": ["cardiac_tamponade", "pericardial_effusion_diagnostic", "purulent_pericarditis", "post_cardiac_surgery"]},
+      "approach": {"type": "string", "description": "Needle insertion approach", "enum": ["subxiphoid", "apical", "parasternal"]},
+      "hemodynamic_status": {"type": "string", "description": "Current hemodynamic status", "enum": ["stable", "hypotensive", "in_shock", "pulseless_electrical_activity"]},
+      "echocardiography_guided": {"type": "boolean", "description": "Whether ultrasound/echo guidance is used"},
+      "fluid_volume_drained_ml": {"type": "integer", "description": "Volume of pericardial fluid drained in mL"},
+      "fluid_character": {"type": "string", "description": "Character of fluid drained", "enum": ["serous", "sanguinous", "purulent", "chylous"]},
+      "complications": {"type": "array", "items": {"type": "string"}, "description": "Any complications during the procedure"},
+      "post_procedure_ecg_changes": {"type": "boolean", "description": "Whether ECG changes occurred post-procedure"}
+    },
+    "required": ["patient_id", "indication", "hemodynamic_status"]
+  },
+  "when_to_use": [
+    "Cardiac tamponade with hemodynamic compromise (Beck's triad)",
+    "Pericardial effusion causing pulseless electrical activity arrest",
+    "Large pericardial effusion with echocardiographic signs of tamponade",
+    "Post-cardiac surgery with suspected tamponade",
+    "Purulent pericarditis requiring drainage"
+  ],
+  "examples": [
+    {"query": "Patient in PEA arrest with distended neck veins, echo shows large pericardial effusion", "args": {"patient_id": "P90001", "indication": "cardiac_tamponade", "hemodynamic_status": "pulseless_electrical_activity", "echocardiography_guided": true, "approach": "subxiphoid"}},
+    {"query": "Hypotensive patient with Beck's triad, echo-guided pericardiocentesis needed", "args": {"patient_id": "P90002", "indication": "cardiac_tamponade", "hemodynamic_status": "hypotensive", "echocardiography_guided": true, "approach": "subxiphoid"}}
+  ]
+}

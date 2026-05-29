@@ -1,0 +1,29 @@
+{
+  "name": "ct_virtual_colonoscopy",
+  "description": "Order a CT virtual colonoscopy (CT colonography) as a minimally invasive alternative to optical colonoscopy for colorectal cancer screening and polyp detection.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["abdomen", "pelvis"], "description": "Body region to image (colon spans abdomen and pelvis)"},
+      "modality": {"type": "string", "enum": ["ct"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["without_contrast"], "description": "Typically performed without IV contrast"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., colorectal cancer screening, incomplete colonoscopy)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "colorectal cancer screening in average-risk patients who decline optical colonoscopy",
+    "incomplete optical colonoscopy requiring evaluation of proximal colon",
+    "elderly or comorbid patients where sedation-based colonoscopy is high risk",
+    "evaluation of colonic obstruction distal to a mass",
+    "surveillance of known polyps not amenable to endoscopic removal"
+  ],
+  "examples": [
+    {
+      "query": "70-year-old patient with multiple comorbidities, needs colorectal cancer screening but poor sedation candidate",
+      "args": {"region": "abdomen", "modality": "ct", "contrast": "without_contrast", "urgency": "routine", "clinical_indication": "colorectal cancer screening, high sedation risk"}
+    }
+  ]
+}

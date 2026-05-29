@@ -1,0 +1,33 @@
+{
+  "name": "ct_head",
+  "description": "Order a CT head to evaluate acute intracranial hemorrhage, stroke, mass effect, hydrocephalus, and traumatic brain injury. Non-contrast is the standard for acute trauma and stroke.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["head"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["ct"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast", "both"], "description": "Contrast requirement"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., head trauma, acute stroke, headache with red flags)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "acute head trauma with loss of consciousness or focal neurologic deficit",
+    "suspected stroke or transient ischemic attack (CT without contrast, then CTA if large vessel occlusion suspected)",
+    "worst headache of life — rule out subarachnoid hemorrhage",
+    "new-onset seizure with prolonged postictal state",
+    "suspected intracranial mass, abscess, or hydrocephalus (with contrast)"
+  ],
+  "examples": [
+    {
+      "query": "Patient found down, GCS 8, unequal pupils",
+      "args": {"region": "head", "modality": "ct", "contrast": "without_contrast", "urgency": "stat", "clinical_indication": "acute head trauma with herniation signs"}
+    },
+    {
+      "query": "Sudden worst headache of life, nuchal rigidity",
+      "args": {"region": "head", "modality": "ct", "contrast": "without_contrast", "urgency": "stat", "clinical_indication": "rule out subarachnoid hemorrhage"}
+    }
+  ]
+}

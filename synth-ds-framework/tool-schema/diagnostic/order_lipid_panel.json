@@ -1,0 +1,26 @@
+{
+  "name": "order_lipid_panel",
+  "description": "Orders a fasting lipid panel including total cholesterol, LDL, HDL, and triglycerides. Used for cardiovascular risk assessment and monitoring lipid-lowering therapy.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "fasting_status": {"type": "string", "description": "Whether patient has fasted for 9-12 hours", "enum": ["true", "false", "unknown"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering lipid panel"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Cardiovascular risk screening",
+    "Monitoring statin or lipid-lowering therapy",
+    "Family history of hyperlipidemia or premature cardiovascular disease",
+    "Diabetes management (annual lipid check)",
+    "New patient baseline assessment"
+  ],
+  "examples": [
+    {"query": "Order a lipid panel", "args": {"patient_id": "P12345", "fasting_status": "true"}},
+    {"query": "Check cholesterol levels", "args": {"patient_id": "P12345", "clinical_indication": "annual cardiovascular screening"}}
+  ]
+}

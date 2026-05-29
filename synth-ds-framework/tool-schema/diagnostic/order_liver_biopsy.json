@@ -1,0 +1,27 @@
+{
+  "name": "order_liver_biopsy",
+  "description": "Orders a liver biopsy (percutaneous, transjugular, or laparoscopic) for histopathological evaluation. Used to stage and grade chronic liver diseases, evaluate unexplained liver enzyme elevations, diagnose storage diseases, and assess liver transplant rejection.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "approach": {"type": "string", "description": "Biopsy approach", "enum": ["percutaneous", "transjugular", "laparoscopic", "image_guided"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for liver biopsy"},
+      "studies_requested": {"type": "array", "items": {"type": "string"}, "description": "Additional studies (iron stain, copper stain, trichrome, PAS, immunohistochemistry)"}
+    },
+    "required": ["patient_id", "clinical_indication"]
+  },
+  "when_to_use": [
+    "Staging of chronic hepatitis B or C",
+    "Unexplained elevated liver enzymes",
+    "Suspected autoimmune hepatitis",
+    "Evaluation of liver transplant rejection or dysfunction",
+    "Suspected hepatic steatosis, fibrosis, or cirrhosis"
+  ],
+  "examples": [
+    {"query": "Order liver biopsy", "args": {"patient_id": "P12345", "clinical_indication": "chronic hepatitis C staging"}},
+    {"query": "Percutaneous liver biopsy for autoimmune hepatitis", "args": {"patient_id": "P12345", "approach": "percutaneous", "clinical_indication": "elevated transaminases with positive ANA and smooth muscle antibody"}}
+  ]
+}

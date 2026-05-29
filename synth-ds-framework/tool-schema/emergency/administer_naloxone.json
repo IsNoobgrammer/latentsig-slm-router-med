@@ -1,0 +1,33 @@
+{
+  "name": "administer_naloxone",
+  "description": "Administer naloxone (Narcan) to reverse opioid overdose and restore respiratory drive",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "presentation": {"type": "string", "description": "Clinical presentation", "enum": ["respiratory_depression", "unresponsive_with_pinpoint_pupils", "cardiac_arrest_suspected_opioid", "decreased_consciousness", "miosis_with_bradycardia"]},
+      "dose_mg": {"type": "number", "description": "Dose in milligrams"},
+      "route": {"type": "string", "description": "Route of administration", "enum": ["intranasal", "intramuscular", "intravenous", "subcutaneous"]},
+      "dose_number": {"type": "integer", "description": "Dose number in current treatment cycle"},
+      "total_doses_given": {"type": "integer", "description": "Total naloxone doses administered so far"},
+      "respiratory_rate_before": {"type": "number", "description": "Respiratory rate before naloxone (breaths/min)"},
+      "respiratory_rate_after": {"type": "number", "description": "Respiratory rate after naloxone (breaths/min)"},
+      "consciousness_response": {"type": "string", "description": "Response of consciousness level", "enum": ["fully_alert", "improved_arousable", "partial_response", "no_response"]},
+      "known_opioid": {"type": "string", "description": "Known or suspected opioid involved", "enum": ["heroin", "fentanyl", "morphine", "oxycodone", "methadone", "unknown"]},
+      "redosing_required": {"type": "boolean", "description": "Whether additional doses may be needed"}
+    },
+    "required": ["patient_id", "presentation", "dose_mg", "route", "dose_number"]
+  },
+  "when_to_use": [
+    "Suspected opioid overdose with respiratory depression",
+    "Patient with pinpoint pupils and decreased level of consciousness",
+    "Respiratory rate < 10 breaths/min with history of opioid use",
+    "Cardiac arrest in patient with known or suspected opioid use",
+    "Post-surgical respiratory depression from opioid analgesia"
+  ],
+  "examples": [
+    {"query": "Found unresponsive with needle nearby, respiratory rate 4, giving Narcan intranasal", "args": {"patient_id": "P00201", "presentation": "unresponsive_with_pinpoint_pupils", "dose_mg": 2, "route": "intranasal", "dose_number": 1, "respiratory_rate_before": 4, "known_opioid": "heroin"}},
+    {"query": "Second dose needed, patient still not breathing adequately", "args": {"patient_id": "P00201", "presentation": "respiratory_depression", "dose_mg": 2, "route": "intranasal", "dose_number": 2, "total_doses_given": 2, "respiratory_rate_before": 6, "consciousness_response": "partial_response", "redosing_required": true}}
+  ]
+}

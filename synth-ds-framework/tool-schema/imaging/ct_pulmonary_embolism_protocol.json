@@ -1,0 +1,29 @@
+{
+  "name": "ct_pulmonary_embolism_protocol",
+  "description": "Order a CT pulmonary angiography (CTPA) to evaluate for pulmonary embolism. This is the gold-standard imaging study for PE diagnosis.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["chest"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["ct"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast"], "description": "CTPA requires IV contrast with bolus tracking"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., dyspnea, pleuritic chest pain, elevated D-dimer)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected pulmonary embolism with elevated D-dimer",
+    "acute dyspnea with pleuritic chest pain and clinical suspicion of PE",
+    "unexplained hypoxemia or tachycardia in at-risk patient",
+    "Wells score or PERC rule indicating need for PE workup",
+    "follow-up of known PE to assess treatment response"
+  ],
+  "examples": [
+    {
+      "query": "Post-surgical patient with sudden dyspnea, tachycardia, elevated D-dimer",
+      "args": {"region": "chest", "modality": "ct", "contrast": "with_contrast", "urgency": "stat", "clinical_indication": "suspected pulmonary embolism"}
+    }
+  ]
+}

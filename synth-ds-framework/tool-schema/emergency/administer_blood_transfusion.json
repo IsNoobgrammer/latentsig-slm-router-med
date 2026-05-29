@@ -1,0 +1,35 @@
+{
+  "name": "administer_blood_transfusion",
+  "description": "Initiate blood product transfusion for hemorrhagic shock, severe anemia, or coagulopathy",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "indication": {"type": "string", "description": "Indication for transfusion", "enum": ["hemorrhagic_shock", "acute_blood_loss_anemia", "chronic_anemia_symptomatic", "coagulopathy", "massive_transfusion_protocol", "disseminated_intravascular_coagulation"]},
+      "blood_products": {"type": "array", "items": {"type": "object", "properties": {
+        "product_type": {"type": "string", "enum": ["packed_red_blood_cells", "fresh_frozen_plasma", "platelets", "cryoprecipitate", "whole_blood"]},
+        "units": {"type": "integer"},
+        "blood_type": {"type": "string", "enum": ["A_positive", "A_negative", "B_positive", "B_negative", "AB_positive", "AB_negative", "O_positive", "O_negative", "type_specific", "universal"]},
+        "crossmatched": {"type": "boolean"}
+      }}, "description": "Blood products to transfuse"},
+      "hemoglobin_g_dl": {"type": "number", "description": "Current hemoglobin level in g/dL"},
+      "hematocrit_percent": {"type": "number", "description": "Current hematocrit percentage"},
+      "inr": {"type": "number", "description": "International Normalized Ratio if coagulopathy"},
+      "transfusion_reaction_history": {"type": "boolean", "description": "Whether patient has history of transfusion reactions"},
+      "massive_transfusion_activated": {"type": "boolean", "description": "Whether massive transfusion protocol is activated"}
+    },
+    "required": ["patient_id", "indication", "blood_products"]
+  },
+  "when_to_use": [
+    "Hemorrhagic shock from trauma, GI bleeding, or surgical bleeding",
+    "Hemoglobin < 7 g/dL with symptoms (or < 8 g/dL in cardiac patients)",
+    "Coagulopathy with active bleeding (elevated INR, low platelets)",
+    "Massive transfusion protocol activation for ongoing hemorrhage",
+    "DIC with consumption of clotting factors requiring replacement"
+  ],
+  "examples": [
+    {"query": "Trauma patient hemorrhagic shock, starting massive transfusion, 2 units PRBCs and 2 units FFP", "args": {"patient_id": "P00401", "indication": "massive_transfusion_protocol", "blood_products": [{"product_type": "packed_red_blood_cells", "units": 2, "blood_type": "O_negative", "crossmatched": false}, {"product_type": "fresh_frozen_plasma", "units": 2, "blood_type": "universal", "crossmatched": false}], "hemoglobin_g_dl": 6.2, "massive_transfusion_activated": true}},
+    {"query": "GI bleed patient with hemoglobin 5.8, transfusing 3 units PRBCs", "args": {"patient_id": "P00402", "indication": "acute_blood_loss_anemia", "blood_products": [{"product_type": "packed_red_blood_cells", "units": 3, "blood_type": "type_specific", "crossmatched": true}], "hemoglobin_g_dl": 5.8}}
+  ]
+}

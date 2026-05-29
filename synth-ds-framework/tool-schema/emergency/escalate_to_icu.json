@@ -1,0 +1,30 @@
+{
+  "name": "escalate_to_icu",
+  "description": "Escalate patient to the intensive care unit for critical care management and continuous monitoring",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "icu_type": {"type": "string", "description": "Type of ICU", "enum": ["medical_icu", "surgical_icu", "cardiac_icu", "neuro_icu", "neonatal_icu", "pediatric_icu", "general_icu"]},
+      "primary_reason": {"type": "string", "description": "Primary reason for ICU admission"},
+      "organ_systems_involved": {"type": "array", "items": {"type": "string"}, "description": "Organ systems requiring support", "enum": ["respiratory", "cardiovascular", "neurological", "renal", "hepatic", "hematologic", "multisystem"]},
+      "ventilation_status": {"type": "string", "description": "Current ventilation status", "enum": ["not_intubated", "intubated", "non_invasive_ventilation", "tracheostomy"]},
+      "vasopressor_requirement": {"type": "boolean", "description": "Whether vasopressor support is needed"},
+      "apache_ii_score": {"type": "integer", "description": "APACHE II severity score if available"},
+      "urgency": {"type": "string", "description": "Urgency of escalation", "enum": ["immediate", "urgent", "standard"]}
+    },
+    "required": ["patient_id", "urgency", "primary_reason", "icu_type"]
+  },
+  "when_to_use": [
+    "Patient with multi-organ failure requiring intensive monitoring",
+    "Hemodynamically unstable patient requiring vasopressor support",
+    "Respiratory failure requiring mechanical ventilation",
+    "Post-surgical patient with complications requiring ICU-level care",
+    "Sepsis with septic shock requiring aggressive fluid resuscitation and vasopressors"
+  ],
+  "examples": [
+    {"query": "Septic shock patient on multiple vasopressors, lactate rising", "args": {"patient_id": "P01010", "urgency": "immediate", "icu_type": "medical_icu", "primary_reason": "septic shock", "organ_systems_involved": ["cardiovascular", "respiratory", "renal"], "vasopressor_requirement": true}},
+    {"query": "Post-operative craniotomy patient needs close neuro monitoring", "args": {"patient_id": "P02020", "urgency": "urgent", "icu_type": "neuro_icu", "primary_reason": "post-craniotomy monitoring", "organ_systems_involved": ["neurological"], "ventilation_status": "intubated"}}
+  ]
+}

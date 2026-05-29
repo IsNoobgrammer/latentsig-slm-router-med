@@ -1,0 +1,25 @@
+{
+  "name": "order_reticulocyte_count",
+  "description": "Orders a reticulocyte count to assess bone marrow erythropoietic activity. Reticulocytes are immature red blood cells. Elevated count indicates active RBC production (response to anemia or polycythemia); low count suggests bone marrow failure.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering reticulocyte count"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Anemia workup to determine marrow response",
+    "Distinguishing hemolytic anemia from production failure",
+    "Monitoring response to iron, B12, or folate supplementation",
+    "Post-bone marrow transplant engraftment monitoring",
+    "Monitoring erythropoietin therapy effectiveness"
+  ],
+  "examples": [
+    {"query": "Order reticulocyte count", "args": {"patient_id": "P12345"}},
+    {"query": "Check retics for anemia evaluation", "args": {"patient_id": "P12345", "clinical_indication": "newly discovered normocytic anemia"}}
+  ]
+}

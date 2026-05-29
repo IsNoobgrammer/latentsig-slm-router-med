@@ -1,0 +1,25 @@
+{
+  "name": "order_ferritin",
+  "description": "Orders a serum ferritin test. Ferritin reflects total body iron stores and is also an acute-phase reactant. Used for iron deficiency anemia diagnosis, iron overload assessment, and inflammation monitoring.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering ferritin"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected iron deficiency anemia",
+    "Workup for microcytic anemia",
+    "Chronic disease anemia evaluation",
+    "Iron overload screening (hemochromatosis)",
+    "Monitoring iron supplementation therapy"
+  ],
+  "examples": [
+    {"query": "Order ferritin", "args": {"patient_id": "P12345"}},
+    {"query": "Check iron studies including ferritin", "args": {"patient_id": "P12345", "clinical_indication": "fatigue with microcytic anemia on CBC"}}
+  ]
+}

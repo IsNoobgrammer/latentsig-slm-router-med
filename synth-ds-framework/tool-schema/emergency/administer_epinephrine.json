@@ -1,0 +1,32 @@
+{
+  "name": "administer_epinephrine",
+  "description": "Administer epinephrine (adrenaline) for cardiac arrest, anaphylaxis, or severe bronchospasm following ACLS and emergency guidelines",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "indication": {"type": "string", "description": "Indication for epinephrine administration", "enum": ["cardiac_arrest_vf_vt", "cardiac_arrest_asystole_pea", "anaphylaxis", "severe_bronchospasm", "croup", "septic_shock_refractory"]},
+      "dose_mcg": {"type": "number", "description": "Dose in micrograms (1mg = 1000mcg)"},
+      "route": {"type": "string", "description": "Route of administration", "enum": ["intravenous", "intraosseous", "intramuscular", "subcutaneous", "endotracheal", "nebulized"]},
+      "concentration": {"type": "string", "description": "Concentration used", "enum": ["1:10000", "1:1000", "1:100"]},
+      "dose_number": {"type": "integer", "description": "Which dose in the current treatment cycle (e.g., 1st, 2nd)"},
+      "interval_min": {"type": "integer", "description": "Repeat interval in minutes (3-5 min for cardiac arrest)"},
+      "patient_weight_kg": {"type": "number", "description": "Patient weight for dose calculation"},
+      "response": {"type": "string", "description": "Patient response after administration", "enum": ["rosc_achieved", "improved_blood_pressure", "anaphylaxis_resolving", "no_response", "adverse_effect"]},
+      "time_administered": {"type": "string", "description": "Time of administration (ISO 8601)"}
+    },
+    "required": ["patient_id", "indication", "dose_mcg", "route", "time_administered"]
+  },
+  "when_to_use": [
+    "Cardiac arrest with non-shockable rhythm (asystole/PEA) requiring vasopressor",
+    "VF/pVT unresponsive to initial defibrillation (after 2nd shock)",
+    "Severe anaphylaxis with airway compromise or hypotension",
+    "Refractory bronchospasm not responding to inhaled bronchodilators",
+    "Croup with severe airway obstruction"
+  ],
+  "examples": [
+    {"query": "Give 1mg epinephrine IV for cardiac arrest, PEA rhythm, 3 minutes into code", "args": {"patient_id": "P00101", "indication": "cardiac_arrest_asystole_pea", "dose_mcg": 1000, "route": "intravenous", "concentration": "1:10000", "dose_number": 1, "time_administered": "2026-05-29T11:05:00Z"}},
+    {"query": "Anaphylaxis patient with stridor and hypotension, giving IM epinephrine", "args": {"patient_id": "P00102", "indication": "anaphylaxis", "dose_mcg": 500, "route": "intramuscular", "concentration": "1:1000", "dose_number": 1, "time_administered": "2026-05-29T11:10:00Z"}}
+  ]
+}

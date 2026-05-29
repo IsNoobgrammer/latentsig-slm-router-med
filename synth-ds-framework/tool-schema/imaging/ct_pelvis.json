@@ -1,0 +1,29 @@
+{
+  "name": "ct_pelvis",
+  "description": "Order a CT pelvis to evaluate pelvic organs, osseous pelvis, bladder, rectum, gynecologic structures, and pelvic lymph nodes.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["pelvis"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["ct"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast", "both"], "description": "Contrast requirement"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., pelvic pain, mass, trauma, cancer staging)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "pelvic pain with diagnostic uncertainty (appendicitis vs gynecologic cause)",
+    "pelvic mass characterization in males or females",
+    "staging of pelvic malignancies (bladder, rectal, cervical, prostate)",
+    "pelvic trauma evaluation (especially after high-energy injury)",
+    "complicated pelvic abscess or post-surgical complications"
+  ],
+  "examples": [
+    {
+      "query": "Female patient with lower abdominal pain, fever, adnexal tenderness",
+      "args": {"region": "pelvis", "modality": "ct", "contrast": "with_contrast", "urgency": "urgent", "clinical_indication": "pelvic pain, rule out tubo-ovarian abscess"}
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "escalate_to_respiratory_unit",
+  "description": "Escalate patient to the respiratory or pulmonary intensive care unit for acute respiratory failure or severe pulmonary conditions",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "respiratory_rate": {"type": "number", "description": "Current respiratory rate in breaths per minute"},
+      "spo2": {"type": "number", "description": "Oxygen saturation percentage"},
+      "oxygen_delivery": {"type": "string", "description": "Current oxygen delivery method", "enum": ["room_air", "nasal_cannula", "non_rebreather", "bipap", "cpap", "high_flow_nasal", "mechanical_ventilation"]},
+      "abg_results": {"type": "string", "description": "Arterial blood gas interpretation", "enum": ["respiratory_acidosis", "respiratory_alkalosis", "metabolic_acidosis", "mixed", "normal", "pending"]},
+      "diagnosis": {"type": "string", "description": "Suspected respiratory diagnosis", "enum": ["acute_respiratory_distress", "copd_exacerbation", "asthma_severe", "pneumonia", "pulmonary_embolism", "pneumothorax", "other"]},
+      "urgency": {"type": "string", "description": "Urgency of escalation", "enum": ["immediate", "urgent", "standard"]}
+    },
+    "required": ["patient_id", "urgency", "spo2", "respiratory_rate"]
+  },
+  "when_to_use": [
+    "Patient with refractory hypoxemia despite supplemental oxygen",
+    "Acute respiratory distress syndrome (ARDS) requiring advanced ventilation",
+    "Severe COPD exacerbation with respiratory failure",
+    "Status asthmaticus unresponsive to initial treatment",
+    "Massive pulmonary embolism with hemodynamic compromise"
+  ],
+  "examples": [
+    {"query": "Patient is on high flow oxygen but sats still dropping to 82%, respiratory rate 34", "args": {"patient_id": "P33333", "urgency": "immediate", "spo2": 82, "respiratory_rate": 34, "oxygen_delivery": "high_flow_nasal", "diagnosis": "acute_respiratory_distress"}},
+    {"query": "Severe COPD exacerbation with CO2 retention, needs BiPAP", "args": {"patient_id": "P44444", "urgency": "urgent", "spo2": 88, "respiratory_rate": 28, "oxygen_delivery": "bipap", "diagnosis": "copd_exacerbation", "abg_results": "respiratory_acidosis"}}
+  ]
+}

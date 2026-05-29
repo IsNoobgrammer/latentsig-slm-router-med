@@ -1,0 +1,26 @@
+{
+  "name": "order_troponin",
+  "description": "Orders a high-sensitivity cardiac troponin (hs-cTnI or hs-cTnT) test. Troponin is the gold standard biomarker for myocardial injury detection and is critical in acute coronary syndrome evaluation.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "serial": {"type": "string", "description": "Whether to order serial troponin draws (0h, 3h, 6h protocol)", "enum": ["true", "false"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering troponin"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Chest pain evaluation in emergency department",
+    "Suspected acute myocardial infarction (STEMI/NSTEMI)",
+    "Post-procedural cardiac monitoring (PCI, cardiac surgery)",
+    "Elevated risk for acute coronary syndrome",
+    "Heart failure decompensation evaluation"
+  ],
+  "examples": [
+    {"query": "Order troponin stat", "args": {"patient_id": "P12345", "urgency": "stat"}},
+    {"query": "Draw serial troponins for chest pain", "args": {"patient_id": "P12345", "urgency": "stat", "serial": "true", "clinical_indication": "acute chest pain with radiation to left arm"}}
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "order_hba1c",
+  "description": "Orders a Hemoglobin A1c (HbA1c) test, which reflects average blood glucose over the past 2-3 months. Used for diabetes diagnosis, monitoring, and management.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering HbA1c"},
+      "known_diabetes": {"type": "string", "description": "Whether patient has known diabetes (type1/type2/prediabetes/none)", "enum": ["type1", "type2", "prediabetes", "none", "unknown"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Diabetes screening in at-risk adults",
+    "Monitoring glycemic control in known diabetics",
+    "Prediabetes follow-up",
+    "New diabetes diagnosis workup",
+    "Evaluating effectiveness of diabetes treatment changes"
+  ],
+  "examples": [
+    {"query": "Order HbA1c", "args": {"patient_id": "P12345"}},
+    {"query": "Check A1c for diabetes monitoring", "args": {"patient_id": "P12345", "known_diabetes": "type2", "clinical_indication": "quarterly diabetes check"}}
+  ]
+}

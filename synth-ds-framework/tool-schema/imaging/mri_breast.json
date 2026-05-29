@@ -1,0 +1,30 @@
+{
+  "name": "mri_breast",
+  "description": "Order a breast MRI for high-risk screening, cancer staging, implant evaluation, or problem-solving when mammography and ultrasound are inconclusive.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["breast"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["mri"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast"], "description": "Breast MRI requires IV gadolinium for dynamic contrast enhancement"},
+      "study_type": {"type": "string", "enum": ["screening", "staging", "implant_evaluation", "problem_solving"], "description": "Indication for breast MRI"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., BRCA carrier, newly diagnosed breast cancer staging)"}
+    },
+    "required": ["region", "modality", "study_type"]
+  },
+  "when_to_use": [
+    "high-risk breast cancer screening (BRCA1/2, >20% lifetime risk)",
+    "staging of newly diagnosed breast cancer (extent of disease)",
+    "evaluation of breast implant integrity (silicone implant rupture)",
+    "problem-solving when mammography and ultrasound are inconclusive",
+    "monitoring response to neoadjuvant chemotherapy"
+  ],
+  "examples": [
+    {
+      "query": "BRCA1-positive patient, age 32, needs breast cancer screening",
+      "args": {"region": "breast", "modality": "mri", "contrast": "with_contrast", "study_type": "screening", "urgency": "routine", "clinical_indication": "high-risk breast cancer screening, BRCA1 carrier"}
+    }
+  ]
+}

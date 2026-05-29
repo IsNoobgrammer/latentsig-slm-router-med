@@ -1,0 +1,33 @@
+{
+  "name": "manage_anaphylaxis",
+  "description": "Manage acute anaphylactic reaction with epinephrine, airway support, and adjunctive medications per ACLS/anaphylaxis guidelines",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "trigger": {"type": "string", "description": "Suspected trigger for anaphylaxis", "enum": ["food", "medication", "insect_sting", "latex", "contrast_dye", "blood_product", "unknown"]},
+      "severity": {"type": "string", "description": "Severity of anaphylactic reaction", "enum": ["mild_skin_only", "moderate_systemic", "severe_airway_compromise", "anaphylactic_shock"]},
+      "airway_status": {"type": "string", "description": "Current airway status", "enum": ["patent", "stridor", "tongue_swelling", "voice_change", "complete_obstruction"]},
+      "blood_pressure": {"type": "string", "description": "Current blood pressure"},
+      "respiratory_rate": {"type": "number", "description": "Respiratory rate"},
+      "spo2": {"type": "number", "description": "Oxygen saturation percentage"},
+      "urticaria_present": {"type": "boolean", "description": "Whether hives/urticaria are present"},
+      "epinephrine_given": {"type": "boolean", "description": "Whether epinephrine has been administered"},
+      "iv_access": {"type": "boolean", "description": "Whether IV access is established"},
+      "allergen_avoided": {"type": "boolean", "description": "Whether trigger has been removed/avoided"}
+    },
+    "required": ["patient_id", "trigger", "severity"]
+  },
+  "when_to_use": [
+    "Acute allergic reaction progressing to anaphylaxis",
+    "Hypotension with urticaria after known allergen exposure",
+    "Airway swelling with stridor after insect sting",
+    "Medication-induced anaphylaxis during infusion",
+    "Food allergy with respiratory compromise and skin changes"
+  ],
+  "examples": [
+    {"query": "Patient ate peanuts, now has stridor, hives, and blood pressure 75/40", "args": {"patient_id": "P00501", "trigger": "food", "severity": "anaphylactic_shock", "airway_status": "stridor", "blood_pressure": "75/40", "urticaria_present": true, "epinephrine_given": false, "iv_access": true}},
+    {"query": "Contrast reaction during CT scan, patient has tongue swelling and wheezing", "args": {"patient_id": "P00502", "trigger": "contrast_dye", "severity": "severe_airway_compromise", "airway_status": "tongue_swelling", "spo2": 89, "urticaria_present": true}}
+  ]
+}

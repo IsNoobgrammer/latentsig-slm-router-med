@@ -1,0 +1,26 @@
+{
+  "name": "order_gram_stain",
+  "description": "Orders a Gram stain of a clinical specimen (wound, sputum, CSF, body fluid, etc.). Provides rapid preliminary identification of bacteria as Gram-positive or Gram-negative, and their morphology (cocci, rods, diplococci) to guide empiric antibiotic therapy.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "specimen_source": {"type": "string", "description": "Source/type of specimen (e.g., wound swab, sputum, CSF, blood, pleural fluid, joint fluid)"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering Gram stain"}
+    },
+    "required": ["patient_id", "specimen_source"]
+  },
+  "when_to_use": [
+    "Rapid identification of bacterial pathogen before culture results",
+    "Empiric antibiotic selection guidance",
+    "Specimen quality assessment (sputum: >25 PMNs, <10 squamous per LPF)",
+    "Joint fluid evaluation for septic arthritis",
+    "Pleural fluid evaluation for empyema"
+  ],
+  "examples": [
+    {"query": "Order Gram stain on the wound", "args": {"patient_id": "P12345", "specimen_source": "wound swab"}},
+    {"query": "Run Gram stain on CSF", "args": {"patient_id": "P12345", "specimen_source": "cerebrospinal fluid", "urgency": "stat", "clinical_indication": "suspected meningitis"}}
+  ]
+}

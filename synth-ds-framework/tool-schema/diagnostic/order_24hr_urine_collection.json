@@ -1,0 +1,27 @@
+{
+  "name": "order_24hr_urine_collection",
+  "description": "Orders a 24-hour urine collection for quantitative analysis. Used to measure total protein excretion, creatinine clearance, catecholamines, cortisol, calcium, and other analytes over a full day for accurate quantification.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "analyte": {"type": "string", "description": "Primary analyte to measure (protein, creatinine_clearance, catecholamines, cortisol, calcium, oxalate, citrate, sodium, potassium)"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering 24-hour urine collection"},
+      "dietary_restrictions": {"type": "string", "description": "Any dietary restrictions required during collection"}
+    },
+    "required": ["patient_id", "analyte"]
+  },
+  "when_to_use": [
+    "Quantifying proteinuria in nephrotic syndrome",
+    "Estimating creatinine clearance (GFR)",
+    "Pheochromocytoma workup (catecholamines and metanephrines)",
+    "Kidney stone evaluation (calcium, oxalate, citrate)",
+    "Cushing syndrome evaluation (cortisol)"
+  ],
+  "examples": [
+    {"query": "Order 24-hour urine for protein", "args": {"patient_id": "P12345", "analyte": "protein"}},
+    {"query": "Get 24hr urine creatinine clearance", "args": {"patient_id": "P12345", "analyte": "creatinine_clearance", "clinical_indication": "chronic kidney disease staging"}}
+  ]
+}

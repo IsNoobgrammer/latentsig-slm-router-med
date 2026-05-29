@@ -1,0 +1,30 @@
+{
+  "name": "mri_fetal",
+  "description": "Order a fetal MRI to supplement prenatal ultrasound for detailed evaluation of fetal brain, spine, chest, or abdomen when ultrasound findings are equivocal or abnormal.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["fetal"], "description": "Body region to image — the fetus in utero"},
+      "modality": {"type": "string", "enum": ["mri"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["without_contrast"], "description": "Fetal MRI is performed without contrast (gadolinium contraindicated in pregnancy)"},
+      "fetal_region": {"type": "string", "enum": ["brain", "spine", "chest", "abdomen", "whole_body"], "description": "Specific fetal region to evaluate"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., ventriculomegaly on US, suspected CNS anomaly, congenital diaphragmatic hernia)"}
+    },
+    "required": ["region", "modality", "fetal_region"]
+  },
+  "when_to_use": [
+    "fetal ventriculomegaly or suspected brain anomaly on ultrasound",
+    "suspected fetal spinal dysraphism or neural tube defect",
+    "congenital diaphragmatic hernia — fetal lung volume assessment",
+    "equivocal ultrasound findings requiring further characterization",
+    "fetal thoracic masses (CPAM, bronchopulmonary sequestration)"
+  ],
+  "examples": [
+    {
+      "query": "Anatomy scan showed bilateral ventriculomegaly, needs further evaluation",
+      "args": {"region": "fetal", "modality": "mri", "contrast": "without_contrast", "fetal_region": "brain", "urgency": "urgent", "clinical_indication": "bilateral fetal ventriculomegaly on ultrasound, brain MRI for further characterization"}
+    }
+  ]
+}

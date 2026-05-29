@@ -1,0 +1,26 @@
+{
+  "name": "order_urine_culture",
+  "description": "Orders a urine culture with antibiotic sensitivity testing. Identifies specific bacterial pathogens causing urinary tract infection and determines effective antibiotics. Colony count thresholds help distinguish true infection from contamination.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "specimen_type": {"type": "string", "description": "Method of urine collection", "enum": ["clean_catch_midstream", "catheterized", "suprapubic_aspiration"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering urine culture"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Confirmed or suspected UTI requiring pathogen identification",
+    "Recurrent UTI",
+    "Complicated UTI (pregnant, male, catheterized, structural abnormality)",
+    "Pyuria on urinalysis with negative dipstick",
+    "Post-treatment UTI follow-up"
+  ],
+  "examples": [
+    {"query": "Order urine culture and sensitivity", "args": {"patient_id": "P12345"}},
+    {"query": "Send UA for culture", "args": {"patient_id": "P12345", "clinical_indication": "recurrent UTI, 3rd episode this year"}}
+  ]
+}

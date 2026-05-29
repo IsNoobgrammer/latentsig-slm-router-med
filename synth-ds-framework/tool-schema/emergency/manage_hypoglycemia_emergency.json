@@ -1,0 +1,33 @@
+{
+  "name": "manage_hypoglycemia_emergency",
+  "description": "Manage severe hypoglycemia emergency with glucose replacement and monitoring to prevent neurological damage",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "blood_glucose_mg_dl": {"type": "number", "description": "Current blood glucose in mg/dL"},
+      "severity": {"type": "string", "description": "Severity of hypoglycemia", "enum": ["mild_symptomatic", "moderate_neuroglycopenic", "severe_unconscious", "seizure_hypoglycemia"]},
+      "consciousness_level": {"type": "string", "description": "Patient's consciousness level", "enum": ["alert", "confused", "obtunded", "unresponsive", "seizure"]},
+      "oral_intake_possible": {"type": "boolean", "description": "Whether patient can safely swallow"},
+      "iv_access": {"type": "boolean", "description": "Whether IV access is available"},
+      "dextrose_concentration": {"type": "string", "description": "Dextrose concentration administered", "enum": ["D10W", "D25W", "D50W"]},
+      "dextrose_volume_ml": {"type": "integer", "description": "Volume of dextrose solution administered in mL"},
+      "glucagon_given": {"type": "boolean", "description": "Whether glucagon was administered"},
+      "underlying_cause": {"type": "string", "description": "Suspected underlying cause", "enum": ["insulin_overdose", "sulfonylurea", "missed_meal", "excessive_alcohol", "liver_failure", "adrenal_insufficiency", "sepsis", "unknown"]},
+      "glucose_rechecked": {"type": "boolean", "description": "Whether glucose was rechecked after treatment"}
+    },
+    "required": ["patient_id", "blood_glucose_mg_dl", "severity", "consciousness_level"]
+  },
+  "when_to_use": [
+    "Blood glucose < 54 mg/dL with neuroglycopenic symptoms",
+    "Blood glucose < 40 mg/dL regardless of symptoms",
+    "Unresponsive diabetic patient with known or suspected low glucose",
+    "Seizure in patient with diabetes or on insulin/sulfonylureas",
+    "Insulin overdose requiring emergency glucose replacement"
+  ],
+  "examples": [
+    {"query": "Diabetic patient found unconscious, glucose 22 mg/dL, IV access obtained", "args": {"patient_id": "P00801", "blood_glucose_mg_dl": 22, "severity": "severe_unconscious", "consciousness_level": "unresponsive", "iv_access": true, "dextrose_concentration": "D50W", "dextrose_volume_ml": 50, "underlying_cause": "insulin_overdose"}},
+    {"query": "Patient seizing, glucose 28, no IV access yet, giving glucagon IM", "args": {"patient_id": "P00802", "blood_glucose_mg_dl": 28, "severity": "seizure_hypoglycemia", "consciousness_level": "seizure", "iv_access": false, "glucagon_given": true}}
+  ]
+}

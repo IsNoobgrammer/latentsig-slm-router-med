@@ -1,0 +1,33 @@
+{
+  "name": "xray_mammography",
+  "description": "Order a mammogram for breast cancer screening or diagnostic evaluation of breast symptoms such as lump, pain, or nipple discharge.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["mammography"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["xray"], "description": "Imaging modality"},
+      "study_type": {"type": "string", "enum": ["screening", "diagnostic"], "description": "Screening for asymptomatic patients or diagnostic for symptomatic"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., screening, palpable lump, nipple discharge)"}
+    },
+    "required": ["region", "modality", "study_type"]
+  },
+  "when_to_use": [
+    "routine breast cancer screening in women over 40",
+    "palpable breast lump requiring diagnostic evaluation",
+    "nipple discharge or skin changes on the breast",
+    "follow-up of previously identified breast lesion (BI-RADS 0)",
+    "high-risk screening for BRCA carriers or strong family history"
+  ],
+  "examples": [
+    {
+      "query": "45-year-old woman for routine annual screening mammogram",
+      "args": {"region": "mammography", "modality": "xray", "study_type": "screening", "urgency": "routine", "clinical_indication": "routine breast cancer screening"}
+    },
+    {
+      "query": "Patient noticed a new palpable lump in the left breast",
+      "args": {"region": "mammography", "modality": "xray", "study_type": "diagnostic", "urgency": "urgent", "clinical_indication": "palpable left breast mass"}
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "order_bnp",
+  "description": "Orders a B-type Natriuretic Peptide (BNP) or NT-proBNP test. These biomarkers are released by ventricular myocardium in response to volume overload and are used for heart failure diagnosis and management.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "test_type": {"type": "string", "description": "Which BNP assay to order", "enum": ["BNP", "NT-proBNP"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering BNP"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Dyspnea evaluation to distinguish cardiac vs pulmonary cause",
+    "Suspected acute or chronic heart failure",
+    "Monitoring heart failure treatment response",
+    "Volume overload assessment",
+    "Post-acute MI cardiac function evaluation"
+  ],
+  "examples": [
+    {"query": "Order BNP", "args": {"patient_id": "P12345"}},
+    {"query": "Check NT-proBNP for heart failure workup", "args": {"patient_id": "P12345", "test_type": "NT-proBNP", "clinical_indication": "progressive dyspnea and lower extremity edema"}}
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "mri_shoulder",
+  "description": "Order a shoulder MRI to evaluate rotator cuff tears, labral pathology, biceps tendon, impingement, and shoulder instability.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["shoulder"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["mri"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast"], "description": "Contrast requirement — MR arthrography uses intra-articular contrast for labral tears"},
+      "study_type": {"type": "string", "enum": ["routine", "mr_arthrogram"], "description": "Standard MRI or MR arthrography with intra-articular gadolinium"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., rotator cuff tear, recurrent dislocation, shoulder pain)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected rotator cuff tear (supraspinatus, infraspinatus, subscapularis)",
+    "recurrent shoulder dislocation or instability — MR arthrogram for labral tears",
+    "chronic shoulder pain with suspected impingement syndrome",
+    "pre-operative planning for rotator cuff repair or labral repair",
+    "evaluation of long head of biceps tendon pathology"
+  ],
+  "examples": [
+    {
+      "query": "Middle-aged patient with shoulder pain, weakness with overhead activities, night pain",
+      "args": {"region": "shoulder", "modality": "mri", "contrast": "without_contrast", "study_type": "routine", "urgency": "routine", "clinical_indication": "suspected rotator cuff tear"}
+    }
+  ]
+}

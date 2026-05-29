@@ -1,0 +1,26 @@
+{
+  "name": "order_blood_smear",
+  "description": "Orders a peripheral blood smear examination by a hematologist or pathologist. Evaluates red cell morphology, white cell differential, and platelet appearance. Essential for identifying schistocytes, sickle cells, target cells, blasts, and other morphological abnormalities.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering blood smear"},
+      "specific_findings_suspected": {"type": "string", "description": "Specific findings to look for (e.g., schistocytes, blasts, sickle cells, malarial parasites)"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Abnormal CBC results (abnormal cell counts or indices)",
+    "Suspected hemolytic anemia (schistocytes)",
+    "Leukemia or lymphoma workup (blasts, atypical cells)",
+    "Sickle cell disease evaluation",
+    "Suspected parasitic infection (malaria, babesiosis)"
+  ],
+  "examples": [
+    {"query": "Order blood smear", "args": {"patient_id": "P12345"}},
+    {"query": "Get peripheral smear looking for schistocytes", "args": {"patient_id": "P12345", "specific_findings_suspected": "schistocytes", "clinical_indication": "thrombocytopenia and anemia concerning for TTP"}}
+  ]
+}

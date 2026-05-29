@@ -1,0 +1,28 @@
+{
+  "name": "order_sputum_culture",
+  "description": "Orders a sputum culture with Gram stain for respiratory pathogen identification. Used to diagnose bacterial pneumonia, tuberculosis, and other lower respiratory infections. Includes antibiotic sensitivity testing.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "specimen_source": {"type": "string", "description": "Source of sputum specimen", "enum": ["expectorated", "induced", "bronchoscopic"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering sputum culture"},
+      "include_afb": {"type": "string", "description": "Whether to include acid-fast bacilli (AFB) staining and culture for TB", "enum": ["true", "false"]},
+      "include_fungal": {"type": "string", "description": "Whether to include fungal culture", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected community-acquired or hospital-acquired pneumonia",
+    "Chronic productive cough",
+    "Suspected tuberculosis",
+    "Recurrent respiratory infections",
+    "Immunocompromised patient with pulmonary infiltrates"
+  ],
+  "examples": [
+    {"query": "Order sputum culture", "args": {"patient_id": "P12345"}},
+    {"query": "Send sputum for culture and AFB", "args": {"patient_id": "P12345", "include_afb": "true", "clinical_indication": "chronic cough with night sweats and weight loss"}}
+  ]
+}

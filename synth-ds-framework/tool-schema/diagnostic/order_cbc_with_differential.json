@@ -1,0 +1,26 @@
+{
+  "name": "order_cbc_with_differential",
+  "description": "Orders a Complete Blood Count (CBC) with differential white blood cell count. Evaluates red blood cells, white blood cells, hemoglobin, hematocrit, platelets, and WBC subtypes (neutrophils, lymphocytes, monocytes, eosinophils, basophils).",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering the CBC"},
+      "reticulocyte_count": {"type": "string", "description": "Whether to add reticulocyte count", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected anemia or polycythemia",
+    "Evaluation of infection or immune disorders",
+    "Monitoring chemotherapy effects on blood counts",
+    "Unexplained fatigue or weakness",
+    "Bleeding disorders or easy bruising"
+  ],
+  "examples": [
+    {"query": "Order a CBC with diff", "args": {"patient_id": "P12345"}},
+    {"query": "Get a blood count for infection workup", "args": {"patient_id": "P12345", "urgency": "stat", "clinical_indication": "fever and suspected sepsis"}}
+  ]
+}

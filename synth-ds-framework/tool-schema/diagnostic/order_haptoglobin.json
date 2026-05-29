@@ -1,0 +1,25 @@
+{
+  "name": "order_haptoglobin",
+  "description": "Orders a serum haptoglobin test. Haptoglobin binds free hemoglobin released from lysed red blood cells. Low levels indicate intravascular hemolysis. Used in hemolytic anemia workup.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering haptoglobin"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected hemolytic anemia",
+    "Evaluation of unexplained anemia with elevated LDH and bilirubin",
+    "Monitoring hemolysis in sickle cell disease",
+    "Post-transfusion hemolysis evaluation",
+    "Microangiopathic hemolytic anemia workup (TTP/HUS)"
+  ],
+  "examples": [
+    {"query": "Order haptoglobin", "args": {"patient_id": "P12345"}},
+    {"query": "Check haptoglobin for hemolysis workup", "args": {"patient_id": "P12345", "clinical_indication": "anemia with schistocytes on blood smear"}}
+  ]
+}

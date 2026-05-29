@@ -1,0 +1,28 @@
+{
+  "name": "order_bone_marrow_biopsy",
+  "description": "Orders a bone marrow aspiration and biopsy (typically from posterior iliac crest). Evaluates marrow cellularity, morphology, and architecture for hematologic malignancies, cytopenias, myelodysplasia, and storage disorders.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "site": {"type": "string", "description": "Biopsy site", "enum": ["posterior_iliac_crest", "anterior_iliac_crest", "sternal"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for bone marrow biopsy"},
+      "studies_requested": {"type": "array", "items": {"type": "string"}, "description": "Additional studies (flow cytometry, cytogenetics, FISH, molecular, iron stain, special stains)"},
+      "include_aspirate": {"type": "string", "description": "Whether to include aspiration in addition to core biopsy", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id", "clinical_indication"]
+  },
+  "when_to_use": [
+    "Unexplained pancytopenia or bicytopenia",
+    "Suspected leukemia, lymphoma, or myelodysplastic syndrome",
+    "Staging of Hodgkin or non-Hodgkin lymphoma",
+    "Evaluation of myeloproliferative neoplasm",
+    "Unexplained fever with splenomegaly"
+  ],
+  "examples": [
+    {"query": "Order bone marrow biopsy", "args": {"patient_id": "P12345", "clinical_indication": "pancytopenia workup"}},
+    {"query": "BMB with flow cytometry and cytogenetics", "args": {"patient_id": "P12345", "clinical_indication": "suspected acute myeloid leukemia", "studies_requested": ["flow_cytometry", "cytogenetics", "FISH", "molecular"]}}
+  ]
+}

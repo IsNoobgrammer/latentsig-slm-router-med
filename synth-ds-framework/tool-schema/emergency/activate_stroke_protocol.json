@@ -1,0 +1,31 @@
+{
+  "name": "activate_stroke_protocol",
+  "description": "Activate the acute stroke code protocol for time-critical stroke intervention including thrombolytic candidacy assessment",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "onset_time": {"type": "string", "description": "Last known well time (ISO 8601)"},
+      "symptoms": {"type": "array", "items": {"type": "string"}, "description": "Presenting neurological symptoms"},
+      "nihss_score": {"type": "integer", "description": "NIH Stroke Scale score (0-42)"},
+      "blood_pressure": {"type": "string", "description": "Current blood pressure (systolic/diastolic)"},
+      "blood_glucose": {"type": "number", "description": "Blood glucose level in mg/dL"},
+      "anticoagulant_use": {"type": "boolean", "description": "Whether patient is on anticoagulation therapy"},
+      "recent_surgery": {"type": "boolean", "description": "Whether patient had recent surgery (contraindication for tPA)"},
+      "ct_head_status": {"type": "string", "description": "CT head result if available", "enum": ["no_hemorrhage", "hemorrhage_present", "pending", "not_done"]}
+    },
+    "required": ["patient_id", "onset_time", "symptoms"]
+  },
+  "when_to_use": [
+    "Acute onset of focal neurological deficits suggestive of ischemic stroke",
+    "Patient within 4.5-hour window for IV thrombolytic therapy",
+    "Suspected large vessel occlusion for mechanical thrombectomy candidacy",
+    "Wake-up stroke requiring rapid evaluation",
+    "Stroke alert from EMS or transferring facility"
+  ],
+  "examples": [
+    {"query": "Code stroke activated, 68yo with right-sided weakness and aphasia, last seen well 1 hour ago", "args": {"patient_id": "P10001", "onset_time": "2026-05-29T09:00:00Z", "symptoms": ["right_hemiparesis", "aphasia"], "nihss_score": 14, "blood_pressure": "185/95", "anticoagulant_use": false}},
+    {"query": "Patient found with slurred speech on waking, unsure when symptoms started", "args": {"patient_id": "P10002", "onset_time": "2026-05-28T23:00:00Z", "symptoms": ["dysarthria", "facial_droop"], "nihss_score": 6, "ct_head_status": "pending"}}
+  ]
+}

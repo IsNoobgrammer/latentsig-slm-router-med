@@ -1,0 +1,27 @@
+{
+  "name": "order_coagulation_panel",
+  "description": "Orders a coagulation panel including PT, INR, aPTT, and fibrinogen. Evaluates clotting ability and is used to monitor anticoagulation therapy, pre-surgical screening, and bleeding disorder workup.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering coagulation studies"},
+      "include_fibrinogen": {"type": "string", "description": "Whether to include fibrinogen level", "enum": ["true", "false"]},
+      "include_d_dimer": {"type": "string", "description": "Whether to include D-dimer", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Pre-surgical coagulation screening",
+    "Monitoring warfarin or heparin therapy",
+    "Suspected bleeding disorder",
+    "Unexplained prolonged bleeding or bruising",
+    "DIC evaluation"
+  ],
+  "examples": [
+    {"query": "Order coagulation studies", "args": {"patient_id": "P12345"}},
+    {"query": "Check PT/INR for warfarin monitoring", "args": {"patient_id": "P12345", "clinical_indication": "warfarin therapy monitoring"}}
+  ]
+}

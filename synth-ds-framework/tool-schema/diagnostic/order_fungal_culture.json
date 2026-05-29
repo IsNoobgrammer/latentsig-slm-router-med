@@ -1,0 +1,27 @@
+{
+  "name": "order_fungal_culture",
+  "description": "Orders a fungal culture of clinical specimens to identify fungal pathogens including Candida, Aspergillus, Cryptococcus, dermatophytes, and endemic mycoses. Includes KOH preparation and may include fungal antigen testing.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "specimen_source": {"type": "string", "description": "Source of specimen (skin scraping, nail, hair, sputum, CSF, blood, tissue, BAL)"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering fungal culture"},
+      "include_antigen_testing": {"type": "string", "description": "Whether to include fungal antigen/antibody testing (galactomannan, beta-glucan, cryptococcal antigen)", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id", "specimen_source"]
+  },
+  "when_to_use": [
+    "Suspected invasive fungal infection in immunocompromised patient",
+    "Chronic skin, nail, or hair infection (dermatophyte)",
+    "Suspected systemic candidiasis",
+    "Pulmonary infiltrate in immunocompromised host",
+    "Suspected cryptococcal meningitis"
+  ],
+  "examples": [
+    {"query": "Order fungal culture", "args": {"patient_id": "P12345", "specimen_source": "skin scraping"}},
+    {"query": "Send BAL for fungal culture and galactomannan", "args": {"patient_id": "P12345", "specimen_source": "bronchoalveolar lavage", "include_antigen_testing": "true", "clinical_indication": "febrile neutropenic patient with pulmonary infiltrates"}}
+  ]
+}

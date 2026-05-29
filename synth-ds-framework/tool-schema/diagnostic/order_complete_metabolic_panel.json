@@ -1,0 +1,26 @@
+{
+  "name": "order_complete_metabolic_panel",
+  "description": "Orders a Complete Metabolic Panel (CMP) including glucose, calcium, sodium, potassium, CO2, chloride, BUN, creatinine, albumin, total protein, ALP, ALT, AST, and bilirubin. Used for comprehensive metabolic screening and monitoring organ function.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "fasting_status": {"type": "string", "description": "Whether the patient is fasting (true/false/unknown)", "enum": ["true", "false", "unknown"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering the CMP"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Comprehensive metabolic screening needed",
+    "Monitoring known kidney or liver disease",
+    "Pre-operative baseline assessment",
+    "Evaluation of electrolyte imbalances",
+    "Medication monitoring affecting renal or hepatic function"
+  ],
+  "examples": [
+    {"query": "Run a metabolic panel for this patient", "args": {"patient_id": "P12345", "fasting_status": "true"}},
+    {"query": "I need CMP results urgently", "args": {"patient_id": "P67890", "urgency": "stat", "clinical_indication": "acute renal failure evaluation"}}
+  ]
+}

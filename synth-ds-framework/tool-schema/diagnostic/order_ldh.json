@@ -1,0 +1,25 @@
+{
+  "name": "order_ldh",
+  "description": "Orders a Lactate Dehydrogenase (LDH) test. LDH is a non-specific marker of tissue damage found in many cells. Elevated in hemolysis, myocardial infarction, liver disease, malignancy, and pulmonary embolism.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering LDH"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected hemolytic anemia",
+    "Monitoring lymphoma or solid tumor treatment response",
+    "Tumor lysis syndrome evaluation",
+    "Non-specific tissue injury assessment",
+    "Pleural or peritoneal fluid analysis to determine exudate"
+  ],
+  "examples": [
+    {"query": "Order LDH", "args": {"patient_id": "P12345"}},
+    {"query": "Check LDH for hemolysis workup", "args": {"patient_id": "P12345", "clinical_indication": "anemia with elevated reticulocyte count and low haptoglobin"}}
+  ]
+}

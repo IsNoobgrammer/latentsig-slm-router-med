@@ -1,0 +1,31 @@
+{
+  "name": "xray_extremity_lower",
+  "description": "Order a lower extremity X-ray (hip, femur, knee, tibia/fibula, ankle, or foot) to evaluate fractures, dislocations, arthritis, and alignment.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["extremity-lower"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["xray"], "description": "Imaging modality"},
+      "specific_site": {"type": "string", "enum": ["hip", "femur", "knee", "tibia_fibula", "ankle", "foot", "toe"], "description": "Specific anatomic site on lower extremity"},
+      "views": {"type": "string", "enum": ["two_view", "three_view", "special_views"], "description": "Number of views requested"},
+      "weight_bearing": {"type": "boolean", "description": "Whether weight-bearing views are required"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., ankle sprain, knee pain, hip fracture)"}
+    },
+    "required": ["region", "modality", "specific_site"]
+  },
+  "when_to_use": [
+    "suspected fracture or dislocation of the lower extremity",
+    "non-weight-bearing patient with hip or knee pain after a fall",
+    "assessment of joint effusion or osteoarthritis",
+    "pre-operative templating for joint replacement",
+    "evaluation of diabetic foot ulcers and osteomyelitis"
+  ],
+  "examples": [
+    {
+      "query": "Elderly patient fell, unable to bear weight, shortened and externally rotated leg",
+      "args": {"region": "extremity-lower", "modality": "xray", "specific_site": "hip", "views": "two_view", "urgency": "stat", "clinical_indication": "suspected hip fracture"}
+    }
+  ]
+}

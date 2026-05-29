@@ -1,0 +1,31 @@
+{
+  "name": "intubate_patient",
+  "description": "Perform endotracheal intubation for airway management in patients requiring definitive airway control",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "indication": {"type": "string", "description": "Indication for intubation", "enum": ["respiratory_failure", "airway_protection", "cardiac_arrest", "decreased_consciousness", "anticipated_clinical_deterioration", "anesthesia"]},
+      "intubation_method": {"type": "string", "description": "Method of intubation", "enum": ["direct_laryngoscopy", "video_laryngoscopy", "fiberoptic", "surgical_airway", "rapid_sequence"]},
+      "et_tube_size_mm": {"type": "number", "description": "Endotracheal tube size in mm (ID)"},
+      "cormack_lehane_grade": {"type": "integer", "description": "Cormack-Lehane grade of laryngeal view (1-4)"},
+      "attempts": {"type": "integer", "description": "Number of intubation attempts"},
+      "medications_used": {"type": "array", "items": {"type": "string"}, "description": "Sedative and paralytic agents used"},
+      "confirmation_methods": {"type": "array", "items": {"type": "string"}, "description": "Methods used to confirm tube placement"},
+      "complications": {"type": "array", "items": {"type": "string"}, "description": "Any complications encountered during intubation"}
+    },
+    "required": ["patient_id", "indication", "intubation_method"]
+  },
+  "when_to_use": [
+    "Patient with acute respiratory failure not responding to non-invasive support",
+    "GCS ≤ 8 with inability to protect airway",
+    "Cardiac arrest with need for advanced airway management",
+    "Anticipated airway compromise from facial or neck trauma",
+    "Need for mechanical ventilation in critically ill patient"
+  ],
+  "examples": [
+    {"query": "Patient with GCS 6, needs rapid sequence intubation for airway protection", "args": {"patient_id": "P70001", "indication": "decreased_consciousness", "intubation_method": "rapid_sequence", "et_tube_size_mm": 7.5, "medications_used": ["etomidate", "succinylcholine"], "confirmation_methods": ["end_tidal_CO2", "bilateral_breath_sounds", "chest_xray"]}},
+    {"query": "Respiratory failure patient, difficult airway, need video laryngoscopy", "args": {"patient_id": "P70002", "indication": "respiratory_failure", "intubation_method": "video_laryngoscopy", "et_tube_size_mm": 7.0, "cormack_lehane_grade": 3}}
+  ]
+}

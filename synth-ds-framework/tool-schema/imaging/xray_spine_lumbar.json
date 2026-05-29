@@ -1,0 +1,30 @@
+{
+  "name": "xray_spine_lumbar",
+  "description": "Order a lumbar spine X-ray to evaluate alignment, disc space narrowing, spondylolisthesis, fractures, and degenerative changes.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["spine-lumbar"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["xray"], "description": "Imaging modality"},
+      "views": {"type": "string", "enum": ["two_view", "four_view", "flexion_extension", "spot_lateral"], "description": "Radiographic views requested"},
+      "weight_bearing": {"type": "boolean", "description": "Whether weight-bearing views are required for alignment assessment"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., low back pain, radiculopathy, trauma)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "chronic or acute low back pain initial workup",
+    "suspected spondylolisthesis or spondylolysis",
+    "assessment of lumbar alignment and disc degeneration",
+    "post-operative fusion hardware evaluation",
+    "trauma screening for lumbar burst or compression fractures"
+  ],
+  "examples": [
+    {
+      "query": "Patient with chronic low back pain and bilateral leg pain worse with extension",
+      "args": {"region": "spine-lumbar", "modality": "xray", "views": "flexion_extension", "weight_bearing": true, "urgency": "routine", "clinical_indication": "suspected spondylolisthesis with instability"}
+    }
+  ]
+}

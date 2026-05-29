@@ -1,0 +1,31 @@
+{
+  "name": "insert_chest_tube",
+  "description": "Insert a chest tube (tube thoracostomy) for drainage of pneumothorax, hemothorax, or pleural effusion",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "indication": {"type": "string", "description": "Indication for chest tube insertion", "enum": ["pneumothorax", "hemothorax", "tension_pneumothorax_decompression", "pleural_effusion", "empyema", "chylothorax"]},
+      "side": {"type": "string", "description": "Side of insertion", "enum": ["left", "right"]},
+      "size_french": {"type": "integer", "description": "Chest tube size in French gauge"},
+      "insertion_site": {"type": "string", "description": "Anatomical insertion site", "enum": ["4th_5th_intercostal_midaxillary", "2nd_intercostal_midclavicular", "5th_intercostal_anterior_axillary"]},
+      "pneumothorax_size_percent": {"type": "number", "description": "Estimated pneumothorax size in percentage if applicable"},
+      "fluid_drainage_ml": {"type": "integer", "description": "Initial fluid drainage in mL if applicable"},
+      "chest_xray_confirmed": {"type": "boolean", "description": "Whether post-procedure chest X-ray was obtained"},
+      "complications": {"type": "array", "items": {"type": "string"}, "description": "Any complications during insertion"}
+    },
+    "required": ["patient_id", "indication", "side", "size_french"]
+  },
+  "when_to_use": [
+    "Large pneumothorax (>2cm rim on CXR) or symptomatic pneumothorax",
+    "Tension pneumothorax after needle decompression",
+    "Traumatic hemothorax requiring drainage",
+    "Spontaneous pneumothorax in symptomatic patient",
+    "Pleural effusion causing respiratory compromise"
+  ],
+  "examples": [
+    {"query": "Right-sided pneumothorax after central line insertion, patient is dyspneic", "args": {"patient_id": "P80001", "indication": "pneumothorax", "side": "right", "size_french": 28, "insertion_site": "4th_5th_intercostal_midaxillary", "pneumothorax_size_percent": 30}},
+    {"query": "Trauma patient with left hemothorax, draining 800mL blood", "args": {"patient_id": "P80002", "indication": "hemothorax", "side": "left", "size_french": 32, "fluid_drainage_ml": 800}}
+  ]
+}

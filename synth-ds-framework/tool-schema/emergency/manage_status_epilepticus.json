@@ -1,0 +1,33 @@
+{
+  "name": "manage_status_epilepticus",
+  "description": "Manage status epilepticus with benzodiazepines and anti-epileptic drugs following AES guidelines for convulsive and non-convulsive status",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "seizure_type": {"type": "string", "description": "Type of status epilepticus", "enum": ["generalized_convulsive", "focal_with_impairment", "nonconvulsive", "myoclonic"]},
+      "seizure_duration_min": {"type": "integer", "description": "Duration of continuous seizure activity in minutes"},
+      "phase": {"type": "string", "description": "Phase of status epilepticus", "enum": ["early_5_20_min", "established_20_40_min", "refractory_>40_min", "super_refractory_>24hr"]},
+      "known_epilepsy": {"type": "boolean", "description": "Whether patient has known epilepsy"},
+      "current_medications": {"type": "array", "items": {"type": "string"}, "description": "Current anti-epileptic medications"},
+      "medications_administered": {"type": "array", "items": {"type": "string"}, "description": "Medications already given for current episode"},
+      "blood_glucose_mg_dl": {"type": "number", "description": "Blood glucose level"},
+      "temperature_celsius": {"type": "number", "description": "Body temperature in Celsius"},
+      "intubation_required": {"type": "boolean", "description": "Whether intubation is needed for airway protection"},
+      "eeg_obtained": {"type": "boolean", "description": "Whether EEG monitoring is available"}
+    },
+    "required": ["patient_id", "seizure_type", "seizure_duration_min", "phase"]
+  },
+  "when_to_use": [
+    "Continuous seizure activity lasting more than 5 minutes",
+    "Recurrent seizures without return to baseline between episodes",
+    "Established status epilepticus unresponsive to initial benzodiazepines",
+    "Refractory status epilepticus requiring anesthetic agents",
+    "Non-convulsive status epilepticus detected on EEG"
+  ],
+  "examples": [
+    {"query": "Patient seizing for 15 minutes, given lorazepam 4mg IV without response", "args": {"patient_id": "P00601", "seizure_type": "generalized_convulsive", "seizure_duration_min": 15, "phase": "early_5_20_min", "medications_administered": ["lorazepam_4mg_iv"], "blood_glucose_mg_dl": 110, "known_epilepsy": false}},
+    {"query": "Refractory status epilepticus, 45 minutes, not responding to benzos or levetiracetam", "args": {"patient_id": "P00602", "seizure_type": "generalized_convulsive", "seizure_duration_min": 45, "phase": "refractory_>40_min", "medications_administered": ["lorazepam_4mg_iv", "lorazepam_4mg_iv_repeat", "levetiracetam_60mg_iv"], "intubation_required": true}}
+  ]
+}

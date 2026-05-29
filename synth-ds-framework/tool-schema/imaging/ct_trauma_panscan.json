@@ -1,0 +1,29 @@
+{
+  "name": "ct_trauma_panscan",
+  "description": "Order a trauma pan-scan (CT head, C-spine, chest, abdomen, and pelvis with IV contrast) for comprehensive evaluation of polytrauma patients.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["whole-body"], "description": "Body region — whole-body trauma survey"},
+      "modality": {"type": "string", "enum": ["ct"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast"], "description": "IV contrast required (head non-contrast, then contrast for body)"},
+      "urgency": {"type": "string", "enum": ["stat"], "description": "Trauma panscan is always stat"},
+      "clinical_indication": {"type": "string", "description": "Mechanism of injury and presenting signs (e.g., MVC, fall from height, GCS)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "high-energy trauma with altered mental status",
+    "polytrauma patient hemodynamically stable enough for CT",
+    "motor vehicle collision with multiple suspected injuries",
+    "fall from significant height with multiple areas of pain",
+    "stabbing or gunshot wound with uncertain trajectory"
+  ],
+  "examples": [
+    {
+      "query": "High-speed MVC, GCS 13, hypotensive, multiple areas of tenderness",
+      "args": {"region": "whole-body", "modality": "ct", "contrast": "with_contrast", "urgency": "stat", "clinical_indication": "polytrauma from high-speed MVC, hemodynamically borderline stable"}
+    }
+  ]
+}

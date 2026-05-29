@@ -1,0 +1,28 @@
+{
+  "name": "order_stool_culture",
+  "description": "Orders a stool culture for identification of enteric bacterial pathogens including Salmonella, Shigella, Campylobacter, E. coli O157:H7, and Yersinia. Includes antibiotic sensitivity testing.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering stool culture"},
+      "include_c_difficile": {"type": "string", "description": "Whether to include Clostridioides difficile toxin assay", "enum": ["true", "false"]},
+      "include_ova_parasites": {"type": "string", "description": "Whether to include ova and parasite examination", "enum": ["true", "false"]},
+      "include_giardia_antigen": {"type": "string", "description": "Whether to include Giardia antigen test", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Acute infectious diarrhea",
+    "Bloody diarrhea or dysentery",
+    "Traveler's diarrhea",
+    "Diarrhea following antibiotic use (C. diff suspicion)",
+    "Foodborne illness outbreak investigation"
+  ],
+  "examples": [
+    {"query": "Order stool culture", "args": {"patient_id": "P12345"}},
+    {"query": "Send stool for culture and C. diff toxin", "args": {"patient_id": "P12345", "include_c_difficile": "true", "clinical_indication": "watery diarrhea after recent clindamycin course"}}
+  ]
+}

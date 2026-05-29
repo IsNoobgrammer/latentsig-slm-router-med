@@ -1,0 +1,27 @@
+{
+  "name": "order_kidney_biopsy",
+  "description": "Orders a percutaneous kidney biopsy for histopathological evaluation. Used to diagnose glomerulonephritis, nephrotic syndrome, transplant rejection, and unexplained renal failure. Includes light microscopy, immunofluorescence, and electron microscopy.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for kidney biopsy"},
+      "approach": {"type": "string", "description": "Biopsy approach", "enum": ["percutaneous", "transjugular", "open"]},
+      "studies_requested": {"type": "array", "items": {"type": "string"}, "description": "Pathology studies (light_microscopy, immunofluorescence, electron_microscopy)"}
+    },
+    "required": ["patient_id", "clinical_indication"]
+  },
+  "when_to_use": [
+    "Nephrotic syndrome diagnosis",
+    "Unexplained acute kidney injury",
+    "Suspected glomerulonephritis (hematuria with proteinuria)",
+    "Kidney transplant dysfunction evaluation",
+    "Systemic disease with renal involvement (lupus, amyloidosis)"
+  ],
+  "examples": [
+    {"query": "Order kidney biopsy", "args": {"patient_id": "P12345", "clinical_indication": "nephrotic-range proteinuria"}},
+    {"query": "Renal biopsy for transplant rejection workup", "args": {"patient_id": "P12345", "clinical_indication": "rising creatinine 3 months post-kidney transplant", "studies_requested": ["light_microscopy", "immunofluorescence", "electron_microscopy"]}}
+  ]
+}

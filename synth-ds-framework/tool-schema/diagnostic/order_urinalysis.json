@@ -1,0 +1,27 @@
+{
+  "name": "order_urinalysis",
+  "description": "Orders a comprehensive urinalysis with microscopic examination. Evaluates urine physical properties, chemical composition (pH, protein, glucose, ketones, blood, nitrites, leukocyte esterase), and microscopic sediment for cells, casts, and crystals.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "specimen_type": {"type": "string", "description": "Method of urine collection", "enum": ["clean_catch_midstream", "catheterized", "suprapubic_aspiration", "random"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering urinalysis"},
+      "microscopic": {"type": "string", "description": "Whether to include microscopic examination", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected urinary tract infection (UTI)",
+    "Routine annual physical examination",
+    "Kidney disease screening",
+    "Diabetes mellitus monitoring (glycosuria, ketonuria)",
+    "Unexplained hematuria evaluation"
+  ],
+  "examples": [
+    {"query": "Order a urinalysis", "args": {"patient_id": "P12345"}},
+    {"query": "Get UA with micro for UTI workup", "args": {"patient_id": "P12345", "microscopic": "true", "clinical_indication": "dysuria and frequency"}}
+  ]
+}

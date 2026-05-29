@@ -1,0 +1,29 @@
+{
+  "name": "mri_spine",
+  "description": "Order an MRI of the spine (cervical, thoracic, or lumbar) to evaluate disc herniation, spinal cord compression, infection, tumor, and nerve root impingement.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["spine-cervical", "spine-thoracic", "spine-lumbar"], "description": "Spinal region to image"},
+      "modality": {"type": "string", "enum": ["mri"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast", "both"], "description": "Contrast requirement"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., radiculopathy, myelopathy, cauda equina syndrome)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected cauda equina syndrome (MRI lumbar spine STAT)",
+    "radiculopathy not improving with conservative management",
+    "suspected spinal cord compression or myelopathy",
+    "spinal epidural abscess or discitis/osteomyelitis evaluation",
+    "intradural or intramedullary spinal tumor characterization"
+  ],
+  "examples": [
+    {
+      "query": "Patient with bilateral leg weakness, saddle anesthesia, urinary retention",
+      "args": {"region": "spine-lumbar", "modality": "mri", "contrast": "both", "urgency": "stat", "clinical_indication": "suspected cauda equina syndrome"}
+    }
+  ]
+}

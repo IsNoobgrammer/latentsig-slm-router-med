@@ -1,0 +1,29 @@
+{
+  "name": "escalate_to_cardiac_unit",
+  "description": "Escalate patient to the cardiac care unit for ongoing cardiac monitoring and intervention",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "heart_rate": {"type": "number", "description": "Current heart rate in bpm"},
+      "blood_pressure": {"type": "string", "description": "Blood pressure reading (systolic/diastolic)"},
+      "ecg_findings": {"type": "string", "description": "ECG abnormalities observed", "enum": ["st_elevation", "st_depression", "arrhythmia", "heart_block", "normal", "nonspecific"]},
+      "chest_pain_description": {"type": "string", "description": "Description of chest pain characteristics"},
+      "troponin_level": {"type": "string", "description": "Troponin level if available"},
+      "urgency": {"type": "string", "description": "Urgency of escalation", "enum": ["immediate", "urgent", "standard"]}
+    },
+    "required": ["patient_id", "urgency"]
+  },
+  "when_to_use": [
+    "Patient presenting with ST-elevation myocardial infarction (STEMI)",
+    "Unstable angina with hemodynamic instability",
+    "New-onset arrhythmia requiring continuous cardiac monitoring",
+    "Post-cardiac arrest patient requiring ongoing care",
+    "Acute decompensated heart failure requiring CCU admission"
+  ],
+  "examples": [
+    {"query": "This patient has crushing chest pain and ST elevation on ECG", "args": {"patient_id": "P12345", "urgency": "immediate", "ecg_findings": "st_elevation", "chest_pain_description": "crushing substernal pain radiating to left arm"}},
+    {"query": "Patient with new atrial fibrillation and rapid ventricular response", "args": {"patient_id": "P67890", "urgency": "urgent", "ecg_findings": "arrhythmia", "heart_rate": 155}}
+  ]
+}

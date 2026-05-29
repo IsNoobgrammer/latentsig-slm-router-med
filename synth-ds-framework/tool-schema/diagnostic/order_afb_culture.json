@@ -1,0 +1,28 @@
+{
+  "name": "order_afb_culture",
+  "description": "Orders an acid-fast bacilli (AFB) culture and smear for Mycobacterium tuberculosis and non-tuberculous mycobacteria (NTM). AFB cultures require extended incubation (up to 8 weeks). Includes AFB smear for rapid detection.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "specimen_source": {"type": "string", "description": "Source of specimen (sputum, bronchial wash, CSF, urine, tissue, blood)"},
+      "number_of_specimens": {"type": "string", "description": "Number of specimens to collect (typically 3 sputum specimens for respiratory TB)"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering AFB culture"},
+      "include_pcr": {"type": "string", "description": "Whether to include MTB PCR (GeneXpert)", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id", "specimen_source"]
+  },
+  "when_to_use": [
+    "Suspected pulmonary tuberculosis",
+    "Extrapulmonary TB (lymph node, bone, CNS, GU)",
+    "Positive TB skin test or IGRA with symptoms",
+    "Immunocompromised patient with chronic cough",
+    "NTM infection suspected in CF or structural lung disease"
+  ],
+  "examples": [
+    {"query": "Order AFB cultures on sputum", "args": {"patient_id": "P12345", "specimen_source": "sputum"}},
+    {"query": "Send sputum for AFB smear, culture, and GeneXpert", "args": {"patient_id": "P12345", "specimen_source": "sputum", "number_of_specimens": "3", "include_pcr": "true", "clinical_indication": "cough, hemoptysis, and right upper lobe cavitary lesion"}}
+  ]
+}

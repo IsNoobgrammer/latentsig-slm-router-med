@@ -1,0 +1,29 @@
+{
+  "name": "order_blood_cultures",
+  "description": "Orders blood cultures to detect bacteremia or fungemia. Typically involves draws from two separate sites. Used in sepsis workup, fever of unknown origin, and suspected endocarditis.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "number_of_sets": {"type": "string", "description": "Number of blood culture sets to collect (typically 2-3)"},
+      "number_of_bottles_per_set": {"type": "string", "description": "Number of bottles per set (aerobic/anaerobic, typically 2)"},
+      "collection_site": {"type": "array", "items": {"type": "string"}, "description": "Sites of venipuncture (e.g., left antecubital fossa, right antecubital fossa)"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for blood cultures"},
+      "antibiotic_already_given": {"type": "string", "description": "Whether antibiotics have already been administered", "enum": ["true", "false", "unknown"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected sepsis or septic shock",
+    "Fever of unknown origin",
+    "Suspected endocarditis",
+    "Neutropenic fever",
+    "Post-surgical fever with concern for bloodstream infection"
+  ],
+  "examples": [
+    {"query": "Order blood cultures", "args": {"patient_id": "P12345"}},
+    {"query": "Draw blood cultures from two sites, patient is febrile and septic", "args": {"patient_id": "P12345", "number_of_sets": "2", "urgency": "stat", "clinical_indication": "suspected sepsis"}}
+  ]
+}

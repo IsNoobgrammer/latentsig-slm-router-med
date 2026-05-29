@@ -1,0 +1,30 @@
+{
+  "name": "ct_cardiac",
+  "description": "Order a cardiac CT for coronary artery calcium scoring, CT coronary angiography, or cardiac structural evaluation. Used in chest pain workup and pre-procedural planning.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["chest"], "description": "Body region to image — focused on the heart"},
+      "modality": {"type": "string", "enum": ["ct"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast"], "description": "Contrast requirement — non-contrast for calcium scoring, contrast for coronary CTA"},
+      "study_type": {"type": "string", "enum": ["calcium_score", "coronary_cta", "structural"], "description": "Specific cardiac CT study type"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., chest pain risk stratification, pre-TAVR planning)"}
+    },
+    "required": ["region", "modality", "study_type"]
+  },
+  "when_to_use": [
+    "intermediate-risk chest pain for coronary artery disease risk stratification",
+    "coronary CTA as alternative to invasive coronary angiography",
+    "pre-TAVR or pre-MitralClip evaluation of cardiac structures and access",
+    "anomalous coronary artery evaluation in young patients with chest pain",
+    "cardiac mass or pericardial disease characterization"
+  ],
+  "examples": [
+    {
+      "query": "55-year-old male with atypical chest pain, intermediate pretest probability",
+      "args": {"region": "chest", "modality": "ct", "contrast": "with_contrast", "study_type": "coronary_cta", "urgency": "routine", "clinical_indication": "chest pain, rule out coronary artery disease"}
+    }
+  ]
+}

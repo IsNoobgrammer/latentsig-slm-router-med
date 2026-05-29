@@ -1,0 +1,28 @@
+{
+  "name": "xray_spine_thoracic",
+  "description": "Order a thoracic spine X-ray to evaluate compression fractures, metastatic disease, kyphosis, and alignment abnormalities.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["spine-thoracic"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["xray"], "description": "Imaging modality"},
+      "views": {"type": "string", "enum": ["pa_lateral", "two_view"], "description": "Radiographic views requested"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., back pain, suspected fracture, metastatic disease)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "mid-back pain with point tenderness after trauma",
+    "suspected osteoporotic compression fracture",
+    "known malignancy with back pain (metastatic screening)",
+    "assessment of thoracic kyphosis or Scheuermann disease"
+  ],
+  "examples": [
+    {
+      "query": "Post-menopausal woman with sudden onset mid-back pain after lifting",
+      "args": {"region": "spine-thoracic", "modality": "xray", "views": "two_view", "urgency": "urgent", "clinical_indication": "suspected thoracic compression fracture"}
+    }
+  ]
+}

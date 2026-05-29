@@ -1,0 +1,34 @@
+{
+  "name": "ct_abdomen",
+  "description": "Order a CT abdomen to evaluate abdominal organs, vasculature, and retroperitoneum. Contrast-enhanced for solid organ pathology; non-contrast for renal stones.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["abdomen"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["ct"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast", "both"], "description": "Contrast requirement"},
+      "oral_contrast": {"type": "boolean", "description": "Whether oral contrast is needed for bowel evaluation"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., abdominal pain, mass, trauma)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "acute abdominal pain with diagnostic uncertainty (CT with IV contrast)",
+    "suspected appendicitis, diverticulitis, or cholecystitis",
+    "abdominal mass evaluation and staging",
+    "blunt abdominal trauma (FAST-positive or hemodynamically unstable)",
+    "suspected renal or ureteral calculi (non-contrast CT)"
+  ],
+  "examples": [
+    {
+      "query": "Right lower quadrant pain, fever, elevated WBC",
+      "args": {"region": "abdomen", "modality": "ct", "contrast": "with_contrast", "urgency": "stat", "clinical_indication": "suspected appendicitis"}
+    },
+    {
+      "query": "Sudden onset left flank pain radiating to groin, hematuria",
+      "args": {"region": "abdomen", "modality": "ct", "contrast": "without_contrast", "urgency": "stat", "clinical_indication": "suspected renal colic / ureteral stone"}
+    }
+  ]
+}

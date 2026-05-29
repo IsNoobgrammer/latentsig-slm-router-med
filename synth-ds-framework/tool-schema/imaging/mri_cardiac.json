@@ -1,0 +1,30 @@
+{
+  "name": "mri_cardiac",
+  "description": "Order a cardiac MRI for myocardial tissue characterization, cardiomyopathy evaluation, viability assessment, and congenital heart disease imaging.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["chest"], "description": "Body region to image — focused on the heart"},
+      "modality": {"type": "string", "enum": ["mri"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast", "both"], "description": "Contrast requirement — gadolinium for late gadolinium enhancement (LGE)"},
+      "study_type": {"type": "string", "enum": ["viability", "cardiomyopathy", "congenital", "myocarditis", "mass_characterization"], "description": "Specific cardiac MRI indication"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., heart failure etiology, myocarditis, cardiac mass)"}
+    },
+    "required": ["region", "modality", "study_type"]
+  },
+  "when_to_use": [
+    "new-onset heart failure to determine etiology (ischemic vs non-ischemic cardiomyopathy)",
+    "suspected myocarditis (CMR with T2 mapping and LGE)",
+    "cardiac mass characterization (thrombus vs tumor)",
+    "myocardial viability assessment before revascularization",
+    "arrhythmogenic right ventricular cardiomyopathy (ARVC) evaluation"
+  ],
+  "examples": [
+    {
+      "query": "Young patient with new heart failure, normal coronary arteries on catheterization",
+      "args": {"region": "chest", "modality": "mri", "contrast": "both", "study_type": "cardiomyopathy", "urgency": "urgent", "clinical_indication": "new heart failure, etiology workup, ischemic vs non-ischemic"}
+    }
+  ]
+}

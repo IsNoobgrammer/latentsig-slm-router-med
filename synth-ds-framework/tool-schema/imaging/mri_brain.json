@@ -1,0 +1,30 @@
+{
+  "name": "mri_brain",
+  "description": "Order a brain MRI to evaluate intracranial structures with superior soft-tissue contrast. Used for tumor characterization, white matter disease, epilepsy workup, and post-contrast evaluation.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["brain"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["mri"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast", "both"], "description": "Contrast requirement"},
+      "sequences": {"type": "string", "enum": ["routine", "epilepsy_protocol", "stroke_protocol", "oncology_protocol", "demyelination_protocol"], "description": "Specific MRI protocol based on clinical question"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., headache, seizure, suspected tumor, MS workup)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected brain tumor or metastatic disease",
+    "first unprovoked seizure — epilepsy protocol MRI",
+    "suspected multiple sclerosis or demyelinating disease",
+    "brain MRI with contrast for abscess or ring-enhancing lesion",
+    "follow-up of known intracranial neoplasm"
+  ],
+  "examples": [
+    {
+      "query": "Patient with new-onset seizure, no prior history, normal neurologic exam",
+      "args": {"region": "brain", "modality": "mri", "contrast": "both", "sequences": "epilepsy_protocol", "urgency": "urgent", "clinical_indication": "first unprovoked seizure, structural epilepsy workup"}
+    }
+  ]
+}

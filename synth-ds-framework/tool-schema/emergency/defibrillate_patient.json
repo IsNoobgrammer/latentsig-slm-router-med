@@ -1,0 +1,30 @@
+{
+  "name": "defibrillate_patient",
+  "description": "Deliver electrical defibrillation for shockable cardiac rhythms (VF/pVT) following ACLS protocols",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "rhythm": {"type": "string", "description": "Cardiac rhythm requiring defibrillation", "enum": ["ventricular_fibrillation", "pulseless_ventricular_tachycardia"]},
+      "energy_level_joules": {"type": "integer", "description": "Energy level for shock delivery in joules"},
+      "shock_number": {"type": "integer", "description": "Shock number in the current ACLS cycle (1, 2, 3, etc.)"},
+      "defibrillator_type": {"type": "string", "description": "Type of defibrillator", "enum": ["manual", "aed", "biphasic", "monophasic"]},
+      "pad_placement": {"type": "string", "description": "Pad placement configuration", "enum": ["anterolateral", "anteroposterior"]},
+      "patient_weight_kg": {"type": "number", "description": "Patient weight for energy dosing"},
+      "rosc_achieved": {"type": "boolean", "description": "Whether return of spontaneous circulation was achieved after shock"}
+    },
+    "required": ["patient_id", "rhythm", "energy_level_joules", "shock_number"]
+  },
+  "when_to_use": [
+    "Ventricular fibrillation detected during cardiac arrest",
+    "Pulseless ventricular tachycardia requiring defibrillation",
+    "AED analysis recommends shock delivery",
+    "Recurrent VF after initial ROSC requiring re-defibrillation",
+    "Peri-arrest patient with deteriorating to shockable rhythm"
+  ],
+  "examples": [
+    {"query": "Patient in VFib, delivering first biphasic shock at 120J", "args": {"patient_id": "P60001", "rhythm": "ventricular_fibrillation", "energy_level_joules": 120, "shock_number": 1, "defibrillator_type": "biphasic", "pad_placement": "anterolateral"}},
+    {"query": "Second shock needed, VFib persists after first shock", "args": {"patient_id": "P60001", "rhythm": "ventricular_fibrillation", "energy_level_joules": 200, "shock_number": 2, "defibrillator_type": "biphasic"}}
+  ]
+}

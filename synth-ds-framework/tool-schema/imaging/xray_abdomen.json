@@ -1,0 +1,52 @@
+{
+  "name": "xray_abdomen",
+  "description": "Order an abdominal X-ray to evaluate bowel gas pattern, free air, radiopaque foreign bodies, and bony pelvis. First-line for acute abdominal pain and suspected obstruction or perforation.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {
+        "type": "string",
+        "enum": ["abdomen"],
+        "description": "Body region to image"
+      },
+      "modality": {
+        "type": "string",
+        "enum": ["xray"],
+        "description": "Imaging modality"
+      },
+      "views": {
+        "type": "string",
+        "enum": ["supine", "upright", "supine_upright", "left_lateral_decubitus"],
+        "description": "Patient position and number of views"
+      },
+      "urgency": {
+        "type": "string",
+        "enum": ["stat", "urgent", "routine"],
+        "description": "Turnaround time needed"
+      },
+      "clinical_indication": {
+        "type": "string",
+        "description": "Reason for the exam (e.g., abdominal pain, distension, suspected obstruction)"
+      }
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected small or large bowel obstruction",
+    "evaluation for free air under the diaphragm (perforation)",
+    "assessment of fecal loading or constipation",
+    "detection of radiopaque foreign bodies or kidney stones",
+    "post-procedural evaluation after abdominal surgery"
+  ],
+  "examples": [
+    {
+      "query": "Patient presents with colicky abdominal pain, vomiting, and distension",
+      "args": {"region": "abdomen", "modality": "xray", "views": "supine_upright", "urgency": "stat", "clinical_indication": "suspected bowel obstruction"}
+    },
+    {
+      "query": "Elderly patient with severe sudden epigastric pain, rigid abdomen",
+      "args": {"region": "abdomen", "modality": "xray", "views": "upright", "urgency": "stat", "clinical_indication": "rule out visceral perforation"}
+    }
+  ]
+}

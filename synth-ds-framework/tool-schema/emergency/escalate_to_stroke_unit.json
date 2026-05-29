@@ -1,0 +1,29 @@
+{
+  "name": "escalate_to_stroke_unit",
+  "description": "Escalate patient to the stroke unit or neuro-intensive care for acute stroke management",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "stroke_type": {"type": "string", "description": "Suspected stroke type", "enum": ["ischemic", "hemorrhagic", "transient_ischemic_attack", "unknown"]},
+      "onset_time": {"type": "string", "description": "Estimated time of symptom onset (ISO 8601)"},
+      "nihss_score": {"type": "integer", "description": "NIH Stroke Scale score (0-42)"},
+      "symptoms": {"type": "array", "items": {"type": "string"}, "description": "Observed neurological symptoms"},
+      "ct_scan_status": {"type": "string", "description": "CT scan availability", "enum": ["completed_normal", "completed_hemorrhage", "pending", "not_available"]},
+      "urgency": {"type": "string", "description": "Urgency of escalation", "enum": ["immediate", "urgent", "standard"]}
+    },
+    "required": ["patient_id", "urgency", "stroke_type", "onset_time"]
+  },
+  "when_to_use": [
+    "Patient presenting with acute focal neurological deficits",
+    "Suspected ischemic stroke within thrombolytic window (4.5 hours)",
+    "Hemorrhagic stroke requiring neurosurgical evaluation",
+    "Transient ischemic attack with high ABCD2 score",
+    "Post-thrombolysis patient requiring continuous neurological monitoring"
+  ],
+  "examples": [
+    {"query": "Patient with sudden left-sided weakness and slurred speech started 2 hours ago", "args": {"patient_id": "P11111", "urgency": "immediate", "stroke_type": "ischemic", "onset_time": "2026-05-29T10:30:00Z", "symptoms": ["left_hemiparesis", "dysarthria"]}},
+    {"query": "CT shows intracranial hemorrhage, patient is confused with right-sided weakness", "args": {"patient_id": "P22222", "urgency": "immediate", "stroke_type": "hemorrhagic", "onset_time": "2026-05-29T08:00:00Z", "ct_scan_status": "completed_hemorrhage"}}
+  ]
+}

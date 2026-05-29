@@ -1,0 +1,33 @@
+{
+  "name": "administer_thrombolytics",
+  "description": "Administer thrombolytic therapy (tPA/tenecteplase) for acute ischemic stroke, STEMI, or massive pulmonary embolism within the therapeutic window",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "indication": {"type": "string", "description": "Indication for thrombolytic therapy", "enum": ["acute_ischemic_stroke", "stemi", "massive_pulmonary_embolism"]},
+      "agent": {"type": "string", "description": "Thrombolytic agent used", "enum": ["alteplase", "tenecteplase", "reteplase", "streptokinase"]},
+      "dose_mg": {"type": "number", "description": "Total dose in milligrams"},
+      "dose_per_kg": {"type": "number", "description": "Dose per kg body weight in mg/kg"},
+      "patient_weight_kg": {"type": "number", "description": "Patient weight in kg for dose calculation"},
+      "onset_time": {"type": "string", "description": "Time of symptom onset (ISO 8601)"},
+      "door_to_needle_min": {"type": "integer", "description": "Time from arrival to drug administration in minutes"},
+      "contraindications_checked": {"type": "boolean", "description": "Whether all contraindications have been verified absent"},
+      "bleeding_complications": {"type": "array", "items": {"type": "string"}, "description": "Any bleeding complications observed"},
+      "clinical_response": {"type": "string", "description": "Early clinical response", "enum": ["nihss_improved", "no_change", "nihss_worsened", "symptomatic_hemorrhage"]}
+    },
+    "required": ["patient_id", "indication", "agent", "onset_time", "contraindications_checked"]
+  },
+  "when_to_use": [
+    "Acute ischemic stroke within 4.5 hours of symptom onset",
+    "STEMI presenting within 12 hours when primary PCI unavailable",
+    "Massive PE with hemodynamic instability when thrombolysis indicated",
+    "Stroke patient who cannot receive mechanical thrombectomy",
+    "STEMI with door-to-balloon time expected to exceed 120 minutes"
+  ],
+  "examples": [
+    {"query": "Ischemic stroke onset 2 hours ago, NIHSS 18, giving alteplase 0.9mg/kg IV", "args": {"patient_id": "P00301", "indication": "acute_ischemic_stroke", "agent": "alteplase", "dose_per_kg": 0.9, "patient_weight_kg": 70, "onset_time": "2026-05-29T08:00:00Z", "door_to_needle_min": 45, "contraindications_checked": true}},
+    {"query": "STEMI patient, cath lab not available, giving tenecteplase", "args": {"patient_id": "P00302", "indication": "stemi", "agent": "tenecteplase", "dose_mg": 40, "patient_weight_kg": 80, "onset_time": "2026-05-29T07:00:00Z", "contraindications_checked": true}}
+  ]
+}

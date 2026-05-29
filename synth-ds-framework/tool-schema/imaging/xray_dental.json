@@ -1,0 +1,30 @@
+{
+  "name": "xray_dental",
+  "description": "Order a dental X-ray (periapical, bitewing, or panoramic) to evaluate tooth roots, periodontal bone, caries, and jaw pathology.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["dental"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["xray"], "description": "Imaging modality"},
+      "views": {"type": "string", "enum": ["periapical", "bitewing", "panoramic", "occlusal"], "description": "Type of dental radiograph"},
+      "specific_teeth": {"type": "string", "description": "Specific teeth or quadrant to image (e.g., upper right, teeth 1-4)"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., dental pain, suspected abscess, caries detection)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "toothache or dental pain with suspected periapical pathology",
+    "routine caries detection and periodontal assessment",
+    "suspected dental abscess or osteomyelitis of the jaw",
+    "pre-procedural assessment for dental implants or extractions",
+    "evaluation of impacted wisdom teeth"
+  ],
+  "examples": [
+    {
+      "query": "Patient with severe right lower jaw pain and swelling, fever",
+      "args": {"region": "dental", "modality": "xray", "views": "periapical", "specific_teeth": "lower right quadrant", "urgency": "urgent", "clinical_indication": "suspected dental abscess"}
+    }
+  ]
+}

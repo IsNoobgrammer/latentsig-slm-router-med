@@ -1,0 +1,25 @@
+{
+  "name": "order_esr",
+  "description": "Orders an Erythrocyte Sedimentation Rate (ESR) test. ESR measures how quickly red blood cells settle at the bottom of a tube, elevated in inflammation, infection, and autoimmune conditions.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering ESR"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Monitoring temporal arteritis or polymyalgia rheumatica",
+    "Suspected systemic inflammation or autoimmune disease",
+    "Monitoring inflammatory condition treatment response",
+    "Fever of unknown origin workup",
+    "Suspected multiple myeloma screening"
+  ],
+  "examples": [
+    {"query": "Order ESR", "args": {"patient_id": "P12345"}},
+    {"query": "Check sedimentation rate for giant cell arteritis workup", "args": {"patient_id": "P12345", "clinical_indication": "new headache and jaw claudication, suspected GCA"}}
+  ]
+}

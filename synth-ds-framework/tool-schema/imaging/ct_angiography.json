@@ -1,0 +1,34 @@
+{
+  "name": "ct_angiography",
+  "description": "Order a CT angiography (CTA) to evaluate arterial vasculature in any body region. Used for aneurysm detection, dissection evaluation, and peripheral vascular disease.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["head", "neck", "chest", "abdomen", "pelvis", "lower-extremity", "upper-extremity"], "description": "Body region for angiographic evaluation"},
+      "modality": {"type": "string", "enum": ["ct"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast"], "description": "CTA always requires IV contrast"},
+      "cta_target": {"type": "string", "enum": ["arterial", "venous", "both"], "description": "Arterial or venous phase imaging"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., aortic dissection, PE, stroke workup)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected aortic dissection (CTA chest)",
+    "acute ischemic stroke workup for large vessel occlusion (CTA head and neck)",
+    "evaluation of peripheral arterial disease or acute limb ischemia",
+    "visceral artery aneurysm or mesenteric ischemia assessment",
+    "pre-operative vascular mapping for surgical planning"
+  ],
+  "examples": [
+    {
+      "query": "Sudden tearing chest pain radiating to back, blood pressure differential between arms",
+      "args": {"region": "chest", "modality": "ct", "contrast": "with_contrast", "cta_target": "arterial", "urgency": "stat", "clinical_indication": "suspected aortic dissection"}
+    },
+    {
+      "query": "Acute right-sided weakness and aphasia, within thrombectomy window",
+      "args": {"region": "head", "modality": "ct", "contrast": "with_contrast", "cta_target": "arterial", "urgency": "stat", "clinical_indication": "large vessel occlusion stroke workup"}
+    }
+  ]
+}

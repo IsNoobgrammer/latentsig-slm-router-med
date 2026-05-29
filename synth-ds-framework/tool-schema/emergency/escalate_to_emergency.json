@@ -1,0 +1,35 @@
+{
+  "name": "escalate_to_emergency",
+  "description": "Immediately escalate patient to emergency care unit. Use for life-threatening conditions requiring urgent intervention.",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "department": {
+        "type": "string",
+        "description": "Target emergency department",
+        "enum": ["Stroke Unit", "Cardiac Unit", "Respiratory Unit", "Pediatric ER", "Emergency Bay", "Trauma Unit", "Burn Unit", "ICU"]
+      },
+      "reason": {
+        "type": "string",
+        "description": "Brief clinical reason for escalation"
+      }
+    },
+    "required": ["department", "reason"]
+  },
+  "when_to_use": [
+    "suspected stroke (facial droop, slurred speech, limb weakness)",
+    "chest pain with arm numbness or sweating",
+    "severe breathing difficulty with cyanosis",
+    "uncontrolled bleeding",
+    "loss of consciousness",
+    "anaphylaxis",
+    "suspected sepsis"
+  ],
+  "examples": [
+    {
+      "query": "Sudden facial droop, cannot speak, 68-year-old male",
+      "args": {"department": "Stroke Unit", "reason": "suspected acute stroke"}
+    }
+  ]
+}

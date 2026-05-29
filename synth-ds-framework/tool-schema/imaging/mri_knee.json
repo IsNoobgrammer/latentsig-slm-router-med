@@ -1,0 +1,29 @@
+{
+  "name": "mri_knee",
+  "description": "Order a knee MRI to evaluate meniscal tears, ligament injuries, cartilage defects, and internal derangement. Gold standard for sports injuries and chronic knee pain.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["knee"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["mri"], "description": "Imaging modality"},
+      "contrast": {"type": "string", "enum": ["with_contrast", "without_contrast"], "description": "Contrast requirement — most knee MRIs are without contrast"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., ACL tear, meniscal tear, locking knee, chronic pain)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected ACL, PCL, or collateral ligament tear after knee injury",
+    "suspected meniscal tear (mechanical symptoms: locking, catching, giving way)",
+    "chronic knee pain with normal X-rays",
+    "pre-operative planning for arthroscopic surgery",
+    "evaluation of cartilage defects or osteochondral lesions"
+  ],
+  "examples": [
+    {
+      "query": "Young athlete, pivoting injury, immediate swelling, positive Lachman test",
+      "args": {"region": "knee", "modality": "mri", "contrast": "without_contrast", "urgency": "urgent", "clinical_indication": "suspected ACL tear"}
+    }
+  ]
+}

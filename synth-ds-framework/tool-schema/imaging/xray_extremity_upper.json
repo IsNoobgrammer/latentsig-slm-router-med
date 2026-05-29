@@ -1,0 +1,30 @@
+{
+  "name": "xray_extremity_upper",
+  "description": "Order an upper extremity X-ray (shoulder, humerus, elbow, forearm, wrist, or hand) to evaluate fractures, dislocations, arthritis, and foreign bodies.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["extremity-upper"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["xray"], "description": "Imaging modality"},
+      "specific_site": {"type": "string", "enum": ["shoulder", "humerus", "elbow", "forearm", "wrist", "hand", "finger"], "description": "Specific anatomic site on upper extremity"},
+      "views": {"type": "string", "enum": ["two_view", "three_view", "special_views"], "description": "Number of views requested"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., fall on outstretched hand, suspected fracture)"}
+    },
+    "required": ["region", "modality", "specific_site"]
+  },
+  "when_to_use": [
+    "suspected fracture or dislocation of the upper extremity",
+    "assessment of joint swelling or deformity",
+    "evaluation of arthritis or degenerative changes",
+    "foreign body detection in soft tissue",
+    "post-reduction or post-operative follow-up"
+  ],
+  "examples": [
+    {
+      "query": "Patient fell on outstretched hand, wrist is swollen and tender over the anatomical snuffbox",
+      "args": {"region": "extremity-upper", "modality": "xray", "specific_site": "wrist", "views": "three_view", "urgency": "stat", "clinical_indication": "suspected scaphoid fracture"}
+    }
+  ]
+}

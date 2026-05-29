@@ -1,0 +1,27 @@
+{
+  "name": "order_thyroid_panel",
+  "description": "Orders a thyroid function panel including TSH, free T4, free T3, and optionally thyroid antibodies (anti-TPO, anti-thyroglobulin). Evaluates thyroid function for hypo- and hyperthyroidism.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "include_antibodies": {"type": "string", "description": "Whether to include thyroid antibody tests", "enum": ["true", "false"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering thyroid panel"},
+      "known_condition": {"type": "string", "description": "Known thyroid condition if any (e.g., hypothyroid, hyperthyroid, none)"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Symptoms of hypothyroidism (fatigue, weight gain, cold intolerance)",
+    "Symptoms of hyperthyroidism (weight loss, palpitations, heat intolerance)",
+    "Monitoring known thyroid disease",
+    "Thyroid nodule evaluation",
+    "Abnormal TSH on screening"
+  ],
+  "examples": [
+    {"query": "Order thyroid panel", "args": {"patient_id": "P12345"}},
+    {"query": "Check thyroid function with antibodies", "args": {"patient_id": "P12345", "include_antibodies": "true", "clinical_indication": "fatigue and weight gain"}}
+  ]
+}

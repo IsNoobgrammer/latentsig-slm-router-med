@@ -1,0 +1,35 @@
+{
+  "name": "manage_dka_emergency",
+  "description": "Manage diabetic ketoacidosis (DKA) emergency with fluid resuscitation, insulin therapy, and electrolyte correction per ADA/ISPAD guidelines",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "blood_glucose_mg_dl": {"type": "number", "description": "Current blood glucose in mg/dL"},
+      "arterial_ph": {"type": "number", "description": "Arterial blood pH"},
+      "serum_bicarbonate": {"type": "number", "description": "Serum bicarbonate level in mEq/L"},
+      "anion_gap": {"type": "number", "description": "Calculated anion gap"},
+      "serum_ketones": {"type": "string", "description": "Serum or urine ketone level", "enum": ["small", "moderate", "large", "positive"]},
+      "beta_hydroxybutyrate": {"type": "number", "description": "Beta-hydroxybutyrate level in mmol/L"},
+      "severity": {"type": "string", "description": "DKA severity classification", "enum": ["mild", "moderate", "severe"]},
+      "dehydration_percent": {"type": "number", "description": "Estimated dehydration percentage"},
+      "potassium_meq_l": {"type": "number", "description": "Serum potassium level in mEq/L"},
+      "mental_status": {"type": "string", "description": "Patient's mental status", "enum": ["alert", "drowsy", "confused", "unresponsive"]},
+      "insulin_infusion_started": {"type": "boolean", "description": "Whether IV insulin infusion has been initiated"},
+      "fluid_resuscitation_ml": {"type": "integer", "description": "IV fluids administered in mL"}
+    },
+    "required": ["patient_id", "blood_glucose_mg_dl", "severity"]
+  },
+  "when_to_use": [
+    "New-onset Type 1 diabetes presenting with DKA",
+    "Known diabetic with blood glucose >250 mg/dL and ketonemia",
+    "DKA with altered mental status requiring ICU admission",
+    "Severe DKA with pH < 7.0 or bicarbonate < 5 mEq/L",
+    "DKA in pregnancy or post-surgical patient"
+  ],
+  "examples": [
+    {"query": "DKA patient, blood glucose 580, pH 7.12, bicarb 10, large ketones, confused", "args": {"patient_id": "P00701", "blood_glucose_mg_dl": 580, "arterial_ph": 7.12, "serum_bicarbonate": 10, "anion_gap": 28, "serum_ketones": "large", "severity": "moderate", "dehydration_percent": 8, "potassium_meq_l": 5.2, "mental_status": "confused"}},
+    {"query": "Severe DKA with pH 6.95, glucose over 800, patient unresponsive", "args": {"patient_id": "P00702", "blood_glucose_mg_dl": 820, "arterial_ph": 6.95, "serum_bicarbonate": 4, "severity": "severe", "dehydration_percent": 12, "mental_status": "unresponsive"}}
+  ]
+}

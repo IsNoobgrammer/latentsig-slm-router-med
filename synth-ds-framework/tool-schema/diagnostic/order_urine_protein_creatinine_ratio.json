@@ -1,0 +1,26 @@
+{
+  "name": "order_urine_protein_creatinine_ratio",
+  "description": "Orders a spot urine protein-to-creatinine ratio (UPCR). This single-sample test estimates 24-hour protein excretion and is a practical alternative to 24-hour urine collection for proteinuria screening and monitoring.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "specimen_type": {"type": "string", "description": "Time of collection", "enum": ["first_morning_void", "random_spot"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering UPCR"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Screening for proteinuria in diabetes management",
+    "Preeclampsia screening in pregnancy",
+    "Monitoring known chronic kidney disease",
+    "Nephrotic syndrome follow-up",
+    "Initial proteinuria evaluation before 24-hour collection"
+  ],
+  "examples": [
+    {"query": "Order urine protein/creatinine ratio", "args": {"patient_id": "P12345"}},
+    {"query": "Check UPCR for diabetic nephropathy monitoring", "args": {"patient_id": "P12345", "clinical_indication": "type 2 diabetes with suspected nephropathy"}}
+  ]
+}

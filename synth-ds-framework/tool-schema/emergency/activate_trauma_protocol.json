@@ -1,0 +1,30 @@
+{
+  "name": "activate_trauma_protocol",
+  "description": "Activate the trauma code protocol for multi-disciplinary trauma team response to acute traumatic injuries",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "mechanism_of_injury": {"type": "string", "description": "Mechanism of injury", "enum": ["motor_vehicle_collision", "pedestrian_struck", "fall_from_height", "gunshot_wound", "stab_wound", "blast_injury", "crush_injury", "other"]},
+      "trauma_level": {"type": "string", "description": "Trauma activation level", "enum": ["level_1", "level_2"]},
+      "injuries_suspected": {"type": "array", "items": {"type": "string"}, "description": "Suspected injuries based on mechanism and presentation"},
+      "hemodynamic_status": {"type": "string", "description": "Hemodynamic status", "enum": ["stable", "tachycardic", "hypotensive", "in_shock", "cardiac_arrest"]},
+      "gcs_score": {"type": "integer", "description": "Glasgow Coma Scale score (3-15)"},
+      "airway_status": {"type": "string", "description": "Airway patency", "enum": ["patent", "compromised", "secured", "requires_intubation"]},
+      "blood_products_needed": {"type": "boolean", "description": "Whether massive transfusion protocol should be initiated"}
+    },
+    "required": ["patient_id", "mechanism_of_injury", "trauma_level"]
+  },
+  "when_to_use": [
+    "High-energy mechanism with suspected polytrauma",
+    "Penetrating injury to torso with hemodynamic instability",
+    "Fall from significant height (>20 feet for adults, >10 feet for children)",
+    "Motor vehicle collision with significant vehicle deformity or ejection",
+    "Gunshot wound to abdomen, chest, or neck"
+  ],
+  "examples": [
+    {"query": "Level 1 trauma, MVC rollover, driver extricated, hypotensive with open femur fracture", "args": {"patient_id": "P40001", "mechanism_of_injury": "motor_vehicle_collision", "trauma_level": "level_1", "hemodynamic_status": "hypotensive", "injuries_suspected": ["open_femur_fracture", "possible_internal_hemorrhage"], "blood_products_needed": true}},
+    {"query": "GSW to abdomen, patient awake but in pain, tachycardic", "args": {"patient_id": "P40002", "mechanism_of_injury": "gunshot_wound", "trauma_level": "level_1", "hemodynamic_status": "tachycardic", "gcs_score": 14, "airway_status": "patent", "injuries_suspected": ["abdominal_penetrating_injury"]}}
+  ]
+}

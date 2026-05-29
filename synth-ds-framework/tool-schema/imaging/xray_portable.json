@@ -1,0 +1,29 @@
+{
+  "name": "xray_portable",
+  "description": "Order a portable (bedside) X-ray for patients who cannot be transported to the radiology department. Most commonly chest or abdomen at the bedside in the ICU or ward.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["chest", "abdomen"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["xray"], "description": "Imaging modality"},
+      "portable": {"type": "boolean", "description": "Confirms portable/bedside modality"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., line placement check, post-intubation, respiratory status)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "critically ill or intubated patients unable to travel to radiology",
+    "verification of endotracheal tube or central line placement at bedside",
+    "ICU monitoring of pulmonary status",
+    "post-procedural assessment in patients on continuous monitoring",
+    "trauma patients in the emergency bay"
+  ],
+  "examples": [
+    {
+      "query": "ICU patient recently intubated, check ET tube position",
+      "args": {"region": "chest", "modality": "xray", "portable": true, "urgency": "stat", "clinical_indication": "post-intubation ET tube position check"}
+    }
+  ]
+}

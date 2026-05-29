@@ -1,0 +1,29 @@
+{
+  "name": "order_wound_culture",
+  "description": "Orders a wound culture with Gram stain and antibiotic sensitivity testing. Identifies bacterial pathogens from wound infections to guide targeted antibiotic therapy. Specimen obtained via swab, aspiration, or tissue biopsy.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "wound_location": {"type": "string", "description": "Anatomic location of the wound"},
+      "collection_method": {"type": "string", "description": "Method of specimen collection", "enum": ["swab", "needle_aspiration", "tissue_biopsy"]},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering wound culture"},
+      "include_fungal": {"type": "string", "description": "Whether to include fungal culture", "enum": ["true", "false"]},
+      "include_anaerobic": {"type": "string", "description": "Whether to include anaerobic culture", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id", "wound_location"]
+  },
+  "when_to_use": [
+    "Infected wound not responding to empiric antibiotics",
+    "Chronic non-healing wound",
+    "Post-surgical wound infection",
+    "Diabetic foot ulcer infection",
+    "Animal or human bite wound infection"
+  ],
+  "examples": [
+    {"query": "Order wound culture", "args": {"patient_id": "P12345", "wound_location": "left lower extremity"}},
+    {"query": "Culture the surgical wound, it looks infected", "args": {"patient_id": "P12345", "wound_location": "abdominal surgical incision", "collection_method": "swab", "clinical_indication": "post-op wound with purulent drainage"}}
+  ]
+}

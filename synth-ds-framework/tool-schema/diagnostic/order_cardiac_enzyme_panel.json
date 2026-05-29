@@ -1,0 +1,26 @@
+{
+  "name": "order_cardiac_enzyme_panel",
+  "description": "Orders a cardiac enzyme panel including CK, CK-MB, and LDH to evaluate for myocardial injury. Used alongside troponin for comprehensive cardiac assessment in suspected acute coronary syndrome.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering cardiac enzymes"},
+      "serial_monitoring": {"type": "string", "description": "Whether to order serial (trending) draws", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Chest pain evaluation in emergency setting",
+    "Suspected acute myocardial infarction",
+    "Monitoring after cardiac procedure",
+    "Rhabdomyolysis evaluation",
+    "Unexplained elevated troponin"
+  ],
+  "examples": [
+    {"query": "Order cardiac enzymes", "args": {"patient_id": "P12345"}},
+    {"query": "Check CK-MB and LDH for chest pain", "args": {"patient_id": "P12345", "urgency": "stat", "clinical_indication": "chest pain and shortness of breath"}}
+  ]
+}

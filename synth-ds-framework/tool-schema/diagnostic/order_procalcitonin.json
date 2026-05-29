@@ -1,0 +1,25 @@
+{
+  "name": "order_procalcitonin",
+  "description": "Orders a procalcitonin (PCT) test. Procalcitonin rises significantly in bacterial infections but remains low in viral infections and non-infectious inflammation. Used to guide antibiotic therapy and monitor sepsis.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering procalcitonin"}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected bacterial sepsis",
+    "Guiding antibiotic initiation or discontinuation",
+    "Distinguishing bacterial from viral infection",
+    "Monitoring treatment response in severe infection",
+    "Lower respiratory tract infection antibiotic decision"
+  ],
+  "examples": [
+    {"query": "Order procalcitonin", "args": {"patient_id": "P12345"}},
+    {"query": "Check PCT to decide on antibiotics", "args": {"patient_id": "P12345", "urgency": "stat", "clinical_indication": "fever with uncertain bacterial vs viral etiology"}}
+  ]
+}

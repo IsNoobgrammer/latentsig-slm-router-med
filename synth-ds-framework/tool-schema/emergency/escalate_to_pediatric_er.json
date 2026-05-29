@@ -1,0 +1,30 @@
+{
+  "name": "escalate_to_pediatric_er",
+  "description": "Escalate pediatric patient to the pediatric emergency department for age-appropriate emergency care",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "age": {"type": "string", "description": "Patient age (e.g., '6 months', '3 years')"},
+      "age_group": {"type": "string", "description": "Age group classification", "enum": ["neonate", "infant", "toddler", "preschool", "school_age", "adolescent"]},
+      "weight_kg": {"type": "number", "description": "Patient weight in kilograms"},
+      "presenting_complaint": {"type": "string", "description": "Primary presenting complaint"},
+      "vital_signs_abnormal": {"type": "boolean", "description": "Whether vital signs are outside normal range for age"},
+      "parent_present": {"type": "boolean", "description": "Whether parent or guardian is present"},
+      "urgency": {"type": "string", "description": "Urgency of escalation", "enum": ["immediate", "urgent", "standard"]}
+    },
+    "required": ["patient_id", "urgency", "age", "age_group", "presenting_complaint"]
+  },
+  "when_to_use": [
+    "Infant with febrile seizure or suspected meningitis",
+    "Child with severe respiratory distress or croup",
+    "Pediatric trauma patient requiring specialized assessment",
+    "Suspected child abuse or non-accidental injury",
+    "Pediatric patient with signs of sepsis or septic shock"
+  ],
+  "examples": [
+    {"query": "6-month-old with high fever, lethargy, and bulging fontanelle", "args": {"patient_id": "P99999", "urgency": "immediate", "age": "6 months", "age_group": "infant", "presenting_complaint": "fever with lethargy and bulging fontanelle", "vital_signs_abnormal": true, "parent_present": true}},
+    {"query": "3-year-old fell from second story window, alert but crying", "args": {"patient_id": "P00001", "urgency": "immediate", "age": "3 years", "age_group": "toddler", "presenting_complaint": "fall from height", "vital_signs_abnormal": false, "parent_present": false}}
+  ]
+}

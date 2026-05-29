@@ -1,0 +1,28 @@
+{
+  "name": "order_skin_biopsy",
+  "description": "Orders a skin biopsy (punch, shave, or excisional) for histopathological examination. Used to diagnose skin cancers, inflammatory dermatoses, vasculitis, infections, and autoimmune blistering diseases.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "biopsy_type": {"type": "string", "description": "Type of skin biopsy", "enum": ["punch", "shave", "excisional", "incisional"]},
+      "lesion_location": {"type": "string", "description": "Anatomic location of the lesion"},
+      "lesion_description": {"type": "string", "description": "Clinical description of the lesion (size, color, morphology)"},
+      "differential_diagnosis": {"type": "array", "items": {"type": "string"}, "description": "List of suspected diagnoses"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]}
+    },
+    "required": ["patient_id", "biopsy_type", "lesion_location"]
+  },
+  "when_to_use": [
+    "Suspected melanoma or non-melanoma skin cancer",
+    "Persistent or atypical skin lesion",
+    "Suspected cutaneous vasculitis",
+    "Blistering skin disease (pemphigus, bullous pemphigoid)",
+    "Inflammatory dermatosis unresponsive to treatment"
+  ],
+  "examples": [
+    {"query": "Order skin biopsy", "args": {"patient_id": "P12345", "biopsy_type": "punch", "lesion_location": "left shoulder"}},
+    {"query": "Excisional biopsy of suspicious mole", "args": {"patient_id": "P12345", "biopsy_type": "excisional", "lesion_location": "right posterior shoulder", "lesion_description": "8mm asymmetric pigmented lesion with irregular borders", "differential_diagnosis": ["melanoma", "dysplastic nevus"]}}
+  ]
+}

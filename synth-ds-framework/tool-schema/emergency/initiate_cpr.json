@@ -1,0 +1,31 @@
+{
+  "name": "initiate_cpr",
+  "description": "Initiate cardiopulmonary resuscitation for cardiac arrest patients following AHA/ERC guidelines",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "cardiac_rhythm": {"type": "string", "description": "Initial cardiac rhythm observed", "enum": ["ventricular_fibrillation", "ventricular_tachycardia", "asystole", "pulseless_electrical_activity", "unknown"]},
+      "witnessed": {"type": "boolean", "description": "Whether the arrest was witnessed"},
+      "location": {"type": "string", "description": "Location of arrest", "enum": ["in_hospital", "out_of_hospital", "emergency_department", "icu", "operating_room"]},
+      "cpr_start_time": {"type": "string", "description": "Time CPR was initiated (ISO 8601)"},
+      "compression_depth_cm": {"type": "number", "description": "Target compression depth in cm (5-6 for adults)"},
+      "compression_rate": {"type": "integer", "description": "Target compression rate per minute (100-120)"},
+      "advanced_airway": {"type": "boolean", "description": "Whether advanced airway is in place"},
+      "rhythm_check_interval_min": {"type": "integer", "description": "Interval for rhythm checks in minutes (default 2)"}
+    },
+    "required": ["patient_id", "cardiac_rhythm", "witnessed", "cpr_start_time"]
+  },
+  "when_to_use": [
+    "Patient found unresponsive with no pulse and no breathing",
+    "In-hospital cardiac arrest detected on monitoring",
+    "Witnessed cardiac collapse requiring immediate compressions",
+    "Post-defibrillation continued CPR needed",
+    "Pulseless electrical activity detected on ECG monitor"
+  ],
+  "examples": [
+    {"query": "Patient found unresponsive in bed, no pulse, monitor shows VFib", "args": {"patient_id": "P50001", "cardiac_rhythm": "ventricular_fibrillation", "witnessed": true, "location": "icu", "cpr_start_time": "2026-05-29T11:00:00Z", "compression_rate": 110}},
+    {"query": "Unwitnessed arrest found by nurse, patient in asystole", "args": {"patient_id": "P50002", "cardiac_rhythm": "asystole", "witnessed": false, "location": "in_hospital", "cpr_start_time": "2026-05-29T11:15:00Z"}}
+  ]
+}

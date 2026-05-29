@@ -1,0 +1,52 @@
+{
+  "name": "xray_chest",
+  "description": "Order a chest X-ray to evaluate lungs, heart, mediastinum, and bony thorax. First-line imaging for respiratory symptoms, heart failure screening, and post-procedural assessment.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {
+        "type": "string",
+        "enum": ["chest"],
+        "description": "Body region to image"
+      },
+      "modality": {
+        "type": "string",
+        "enum": ["xray"],
+        "description": "Imaging modality"
+      },
+      "views": {
+        "type": "string",
+        "enum": ["pa_lateral", "ap", "ap_upright", "lateral_decubitus", "swimmer"],
+        "description": "Number and type of views requested"
+      },
+      "urgency": {
+        "type": "string",
+        "enum": ["stat", "urgent", "routine"],
+        "description": "Turnaround time needed"
+      },
+      "clinical_indication": {
+        "type": "string",
+        "description": "Reason for the exam (e.g., cough, dyspnea, chest pain, line placement check)"
+      }
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected pneumonia or lower respiratory tract infection",
+    "congestive heart failure or pulmonary edema evaluation",
+    "assessment of central venous catheter or endotracheal tube position",
+    "blunt or penetrating chest trauma initial screening",
+    "pre-operative cardiac and pulmonary clearance"
+  ],
+  "examples": [
+    {
+      "query": "Patient has worsening shortness of breath and bilateral crackles on exam",
+      "args": {"region": "chest", "modality": "xray", "views": "pa_lateral", "urgency": "stat", "clinical_indication": "dyspnea, suspected pulmonary edema"}
+    },
+    {
+      "query": "Check placement of newly inserted PICC line",
+      "args": {"region": "chest", "modality": "xray", "views": "ap", "urgency": "stat", "clinical_indication": "PICC line position verification"}
+    }
+  ]
+}

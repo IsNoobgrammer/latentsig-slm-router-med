@@ -1,0 +1,28 @@
+{
+  "name": "order_csf_culture",
+  "description": "Orders a cerebrospinal fluid (CSF) culture obtained via lumbar puncture. Identifies bacterial, viral, and fungal pathogens causing meningitis or encephalitis. Includes Gram stain and antibiotic sensitivity testing.",
+  "category": "diagnostic",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "urgency": {"type": "string", "description": "Order urgency level", "enum": ["routine", "urgent", "stat"]},
+      "clinical_indication": {"type": "string", "description": "Clinical reason for ordering CSF culture"},
+      "include_viral_pcr": {"type": "string", "description": "Whether to include viral PCR panel (HSV, enterovirus, etc.)", "enum": ["true", "false"]},
+      "include_fungal": {"type": "string", "description": "Whether to include fungal culture and cryptococcal antigen", "enum": ["true", "false"]},
+      "include_afb": {"type": "string", "description": "Whether to include AFB culture for TB meningitis", "enum": ["true", "false"]}
+    },
+    "required": ["patient_id"]
+  },
+  "when_to_use": [
+    "Suspected bacterial meningitis",
+    "Suspected viral encephalitis",
+    "Immunocompromised patient with CNS symptoms",
+    "Subarachnoid hemorrhage evaluation",
+    "Fever with altered mental status and neck stiffness"
+  ],
+  "examples": [
+    {"query": "Order CSF culture", "args": {"patient_id": "P12345", "urgency": "stat"}},
+    {"query": "Send CSF for culture and viral PCR", "args": {"patient_id": "P12345", "urgency": "stat", "include_viral_pcr": "true", "clinical_indication": "acute meningitis with fever, headache, and nuchal rigidity"}}
+  ]
+}

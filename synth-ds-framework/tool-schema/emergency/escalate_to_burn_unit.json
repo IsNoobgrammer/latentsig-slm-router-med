@@ -1,0 +1,30 @@
+{
+  "name": "escalate_to_burn_unit",
+  "description": "Escalate patient to a verified burn center or burn unit for specialized burn management",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "burn_type": {"type": "string", "description": "Type of burn injury", "enum": ["thermal", "chemical", "electrical", "radiation", "inhalation"]},
+      "total_bsa_percentage": {"type": "number", "description": "Total body surface area burned (percentage)"},
+      "burn_depth": {"type": "string", "description": "Depth of burns", "enum": ["superficial", "partial_thickness", "full_thickness", "mixed"]},
+      "burn_location": {"type": "array", "items": {"type": "string"}, "description": "Anatomic locations of burns"},
+      "inhalation_injury": {"type": "boolean", "description": "Whether inhalation injury is suspected"},
+      "associated_trauma": {"type": "boolean", "description": "Whether associated traumatic injuries are present"},
+      "urgency": {"type": "string", "description": "Urgency of escalation", "enum": ["immediate", "urgent", "standard"]}
+    },
+    "required": ["patient_id", "urgency", "burn_type", "total_bsa_percentage", "burn_depth"]
+  },
+  "when_to_use": [
+    "Burns greater than 20% TBSA in adults or 10% in children",
+    "Full-thickness burns requiring surgical debridement",
+    "Inhalation injury with respiratory compromise",
+    "Chemical burns with ongoing tissue destruction",
+    "Electrical burns with risk of cardiac arrhythmia or rhabdomyolysis"
+  ],
+  "examples": [
+    {"query": "House fire victim with 35% TBSA burns, singed nasal hairs, hoarse voice", "args": {"patient_id": "P77777", "urgency": "immediate", "burn_type": "thermal", "total_bsa_percentage": 35, "burn_depth": "mixed", "burn_location": ["chest", "arms", "back"], "inhalation_injury": true}},
+    {"query": "Chemical burn from industrial accident covering both hands and forearms", "args": {"patient_id": "P88888", "urgency": "urgent", "burn_type": "chemical", "total_bsa_percentage": 12, "burn_depth": "partial_thickness", "burn_location": ["hands", "forearms"], "inhalation_injury": false}}
+  ]
+}

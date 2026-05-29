@@ -1,0 +1,29 @@
+{
+  "name": "xray_spine_cervical",
+  "description": "Order a cervical spine X-ray to evaluate alignment, fractures, degenerative changes, and stability after trauma. Includes open-mouth odontoid view for C1-C2 assessment.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["spine-cervical"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["xray"], "description": "Imaging modality"},
+      "views": {"type": "string", "enum": ["three_view", "five_view", "flexion_extension", "swimmers"], "description": "Radiographic views requested"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., neck pain after MVC, suspected fracture)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "cervical spine trauma screening after motor vehicle collision",
+    "neck pain with neurologic symptoms",
+    "assessment of cervical alignment and degenerative disc disease",
+    "pre-operative planning for cervical spine surgery",
+    "evaluation of rheumatoid arthritis at C1-C2"
+  ],
+  "examples": [
+    {
+      "query": "Patient involved in rear-end MVC with neck stiffness and midline tenderness",
+      "args": {"region": "spine-cervical", "modality": "xray", "views": "five_view", "urgency": "stat", "clinical_indication": "cervical spine trauma clearance"}
+    }
+  ]
+}

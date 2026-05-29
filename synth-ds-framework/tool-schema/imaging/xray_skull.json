@@ -1,0 +1,28 @@
+{
+  "name": "xray_skull",
+  "description": "Order a skull X-ray to evaluate bony calvarium, sella turcica, and facial bones. Used for head trauma screening, assessment of skull fractures, and shunt hardware evaluation.",
+  "category": "imaging",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "region": {"type": "string", "enum": ["skull"], "description": "Body region to image"},
+      "modality": {"type": "string", "enum": ["xray"], "description": "Imaging modality"},
+      "views": {"type": "string", "enum": ["pa_lateral", "towne", "waters", "submentovertex", "caldwell"], "description": "Radiographic projection(s) requested"},
+      "urgency": {"type": "string", "enum": ["stat", "urgent", "routine"], "description": "Turnaround time needed"},
+      "clinical_indication": {"type": "string", "description": "Reason for the exam (e.g., head trauma, suspected fracture, shunt evaluation)"}
+    },
+    "required": ["region", "modality"]
+  },
+  "when_to_use": [
+    "suspected skull fracture after blunt head trauma",
+    "assessment of cranial shunt or hardware position",
+    "evaluation of calvarial lytic or sclerotic lesions",
+    "pre-operative planning for cranial procedures"
+  ],
+  "examples": [
+    {
+      "query": "Child fell and hit head, large scalp hematoma noted",
+      "args": {"region": "skull", "modality": "xray", "views": "pa_lateral", "urgency": "urgent", "clinical_indication": "head trauma, rule out skull fracture"}
+    }
+  ]
+}

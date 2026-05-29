@@ -1,0 +1,32 @@
+{
+  "name": "activate_sepsis_protocol",
+  "description": "Activate the sepsis bundle protocol (SEP-1) for early recognition and treatment of sepsis and septic shock",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "suspected_source": {"type": "string", "description": "Suspected source of infection", "enum": ["pulmonary", "urinary", "abdominal", "skin_soft_tissue", "bloodstream", "central_nervous_system", "unknown"]},
+      "qsofa_score": {"type": "integer", "description": "Quick SOFA score (0-3)"},
+      "sirs_criteria_met": {"type": "integer", "description": "Number of SIRS criteria met (0-4)"},
+      "lactate_level": {"type": "number", "description": "Serum lactate level in mmol/L"},
+      "blood_pressure": {"type": "string", "description": "Current blood pressure"},
+      "mean_arterial_pressure": {"type": "number", "description": "Mean arterial pressure in mmHg"},
+      "altered_mental_status": {"type": "boolean", "description": "Whether patient has altered mental status"},
+      "blood_cultures_drawn": {"type": "boolean", "description": "Whether blood cultures have been obtained"},
+      "fluid_resuscitation_ml": {"type": "integer", "description": "Volume of IV fluids administered in mL"}
+    },
+    "required": ["patient_id", "suspected_source", "qsofa_score"]
+  },
+  "when_to_use": [
+    "Patient meeting qSOFA criteria (altered mentation, RR ≥22, SBP ≤100)",
+    "Suspected infection with evidence of organ dysfunction",
+    "Lactate level ≥ 2 mmol/L with suspected infection",
+    "Hypotension not responding to initial fluid bolus",
+    "Post-surgical patient with signs of systemic inflammatory response"
+  ],
+  "examples": [
+    {"query": "Elderly patient with UTI, confused, blood pressure 85/50, lactate 4.2", "args": {"patient_id": "P30001", "suspected_source": "urinary", "qsofa_score": 3, "lactate_level": 4.2, "blood_pressure": "85/50", "mean_arterial_pressure": 55, "altered_mental_status": true, "blood_cultures_drawn": true}},
+    {"query": "Post-operative patient with fever, tachycardia, and rising WBC count", "args": {"patient_id": "P30002", "suspected_source": "abdominal", "qsofa_score": 2, "sirs_criteria_met": 3, "altered_mental_status": false}}
+  ]
+}

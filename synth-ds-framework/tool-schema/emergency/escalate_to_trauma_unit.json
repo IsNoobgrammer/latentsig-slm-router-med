@@ -1,0 +1,29 @@
+{
+  "name": "escalate_to_trauma_unit",
+  "description": "Escalate patient to the trauma unit or trauma surgery service for acute traumatic injuries",
+  "category": "emergency",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "patient_id": {"type": "string", "description": "Unique patient identifier"},
+      "mechanism_of_injury": {"type": "string", "description": "Mechanism of injury", "enum": ["motor_vehicle_collision", "fall", "penetrating_trauma", "blast_injury", "crush_injury", "blast", "other"]},
+      "injury_severity": {"type": "string", "description": "Estimated severity", "enum": ["critical", "major", "moderate"]},
+      "injured_body_regions": {"type": "array", "items": {"type": "string"}, "description": "Body regions with suspected injuries"},
+      "hemodynamic_status": {"type": "string", "description": "Hemodynamic status", "enum": ["stable", "tachycardic", "hypotensive", "in_shock", "unresponsive"]},
+      "gcs_score": {"type": "integer", "description": "Glasgow Coma Scale score (3-15)"},
+      "urgency": {"type": "string", "description": "Urgency of escalation", "enum": ["immediate", "urgent", "standard"]}
+    },
+    "required": ["patient_id", "urgency", "mechanism_of_injury"]
+  },
+  "when_to_use": [
+    "Polytrauma patient with multiple system injuries",
+    "High-energy mechanism with suspected internal hemorrhage",
+    "Penetrating trauma to torso requiring surgical evaluation",
+    "Unstable pelvic fracture with ongoing bleeding",
+    "Trauma patient with declining mental status requiring emergent intervention"
+  ],
+  "examples": [
+    {"query": "Motor vehicle accident victim, hypotensive with abdominal rigidity and pelvic pain", "args": {"patient_id": "P55555", "urgency": "immediate", "mechanism_of_injury": "motor_vehicle_collision", "hemodynamic_status": "hypotensive", "injured_body_regions": ["abdomen", "pelvis"], "injury_severity": "critical"}},
+    {"query": "Stab wound to left chest, patient is tachycardic", "args": {"patient_id": "P66666", "urgency": "immediate", "mechanism_of_injury": "penetrating_trauma", "hemodynamic_status": "tachycardic", "injured_body_regions": ["chest"], "injury_severity": "major"}}
+  ]
+}
