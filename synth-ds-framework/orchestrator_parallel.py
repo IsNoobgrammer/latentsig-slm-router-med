@@ -480,11 +480,14 @@ class ParallelOrchestrator:
             if save_only_pass and verdict != "pass":
                 return False
 
+            parsed = verification["parsed"] or {}
             record = {
                 "system_prompt": self.system_prompt,
                 "user_query": user_query,
                 "response": raw_response,
                 "parsed_response": json.dumps(verification["parsed"]) if verification["parsed"] else None,
+                "tool_called": parsed.get("tool", ""),
+                "category": parsed.get("category", ""),
                 "generation_model_id": gen_model,
                 "language": language,
                 "llm_judge_id": JUDGE_MODEL,
@@ -641,7 +644,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parallel Dataset Orchestrator")
     parser.add_argument("--en", type=int, default=TARGET_EN)
     parser.add_argument("--hi-en", type=int, default=TARGET_HI_EN)
-    parser.add_argument("--workers", type=int, default=8, help="Parallel workers (default: 8)")
+    parser.add_argument("--workers", type=int, default=32, help="Parallel workers (default: 32)")
     parser.add_argument("--save-all", action="store_true")
     args = parser.parse_args()
 

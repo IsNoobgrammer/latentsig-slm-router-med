@@ -228,7 +228,7 @@ def dashboard():
     from flask import render_template_string
 
     live = read_stats()
-    records = read_dataset(limit=200)
+    records = read_dataset(limit=100000)
     ds_stats = compute_dataset_stats(records)
 
     # Recent from live stats
