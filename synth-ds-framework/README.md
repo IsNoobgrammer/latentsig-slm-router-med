@@ -1,40 +1,4 @@
 ---
-dataset_info:
-  features:
-  - name: system_prompt
-    dtype: string
-  - name: user_query
-    dtype: string
-  - name: response
-    dtype: string
-  - name: parsed_response
-    dtype: string
-  - name: tool_called
-    dtype: string
-  - name: category
-    dtype: string
-  - name: generation_model_id
-    dtype: string
-  - name: language
-    dtype: string
-  - name: llm_judge_id
-    dtype: string
-  - name: judge_verdict
-    dtype: string
-  - name: hash
-    dtype: string
-  splits:
-  - name: train
-    num_bytes: 4575000
-    num_examples: 1000
-  download_size: 4575000
-  dataset_size: 4575000
-configs:
-- config_name: default
-  data_files:
-  - split: train
-    path: data/train-*
-license: mit
 language:
   - en
   - hi
@@ -49,9 +13,15 @@ tags:
   - hinglish
   - slm
   - fine-tuning
+license: mit
 pretty_name: LatentSig Medical Triage Router Dataset
 size_categories:
   - 1K<n<10K
+configs:
+- config_name: default
+  data_files:
+  - split: train
+    path: data/train-*
 ---
 
 # LatentSig Medical Triage Router Dataset
