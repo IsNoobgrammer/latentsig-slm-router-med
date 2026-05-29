@@ -77,8 +77,13 @@ def call_mistral(
     max_tokens: int = 512,
     temperature: float = 0.7,
     json_mode: bool = True,
+    max_retries: int = 5,
 ) -> tuple[str, float, str]:
-    """Call Mistral chat API. Returns (content, latency_seconds)."""
+    """Call Mistral chat API with retry + exponential backoff on 429/5xx.
+
+    Returns (content, latency_seconds, model_used).
+    Raises on non-retryable errors or after exhausting retries.
+    """
     body = {
         "model": model,
         "messages": messages,
@@ -89,19 +94,36 @@ def call_mistral(
         body["response_format"] = {"type": "json_object"}
 
     payload = json.dumps(body).encode()
-    req = urllib.request.Request(
-        "https://api.mistral.ai/v1/chat/completions",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {key}",
-        },
-    )
-    start = time.time()
-    resp = urllib.request.urlopen(req, timeout=60)
-    latency = time.time() - start
-    data = json.loads(resp.read())
-    return data["choices"][0]["message"]["content"], latency, model
+
+    for attempt in range(max_retries + 1):
+        req = urllib.request.Request(
+            "https://api.mistral.ai/v1/chat/completions",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {key}",
+            },
+        )
+        try:
+            start = time.time()
+            resp = urllib.request.urlopen(req, timeout=60)
+            latency = time.time() - start
+            data = json.loads(resp.read())
+            return data["choices"][0]["message"]["content"], latency, model
+
+        except urllib.error.HTTPError as e:
+            if e.code == 429 or e.code >= 500:
+                # Rate limited or server error — retry with backoff
+                if attempt < max_retries:
+                    wait = min(2 ** attempt + random.uniform(0, 1), 30)
+                    time.sleep(wait)
+                    # Rotate key on 429
+                    if e.code == 429:
+                        key = MISTRAL_KEYS[(attempt + 1) % len(MISTRAL_KEYS)]
+                    continue
+            raise  # Non-retryable or exhausted retries
+
+    raise RuntimeError(f"Mistral API failed after {max_retries + 1} attempts")
 
 
 # ── Query Generator ──────────────────────────────────────────
@@ -269,6 +291,7 @@ class DatasetOrchestrator:
             "duplicates": 0,
             "en_count": 0,
             "hi_en_count": 0,
+            "errors": 0,
         }
 
     def _category_hint(self) -> str:
@@ -281,68 +304,103 @@ class DatasetOrchestrator:
         Args:
             language: "en" or "hi_en"
         """
-        # Pick a random generation model for this sample
-        gen_model = random.choice(GENERATION_MODELS)
+        try:
+            # Pick a random generation model for this sample
+            gen_model = random.choice(GENERATION_MODELS)
 
-        key1 = self.keys.next()
+            key1 = self.keys.next()
 
-        # Step 1: Generate query
-        category_hint = self._category_hint()
-        en_query, _, _ = generate_query(key1, gen_model, category_hint)
+            # Step 1: Generate query
+            category_hint = self._category_hint()
+            en_query, _, _ = generate_query(key1, gen_model, category_hint)
 
-        if language == "hi_en":
-            key2 = self.keys.next()
-            user_query, _, _ = translate_to_hinglish(key2, en_query, gen_model)
-        else:
-            user_query = en_query
+            if language == "hi_en":
+                key2 = self.keys.next()
+                user_query, _, _ = translate_to_hinglish(key2, en_query, gen_model)
+            else:
+                user_query = en_query
 
-        # Step 2: Generate response
-        key3 = self.keys.next()
-        raw_response, _, _ = generate_response(key3, self.system_prompt, user_query, gen_model)
+            # Step 2: Generate response
+            key3 = self.keys.next()
+            raw_response, _, _ = generate_response(key3, self.system_prompt, user_query, gen_model)
 
-        # Step 3: Verify
-        verification = self.verifier.verify(user_query, raw_response)
+            # Step 3: Verify
+            verification = self.verifier.verify(user_query, raw_response)
 
-        verdict = verification["verdict"]
+            verdict = verification["verdict"]
 
-        # Step 4: Dedup
-        h = compute_hash(user_query, verdict)
-        if self.hash_store.is_duplicate(h):
-            self.stats["duplicates"] += 1
+            # Step 4: Dedup
+            h = compute_hash(user_query, verdict)
+            if self.hash_store.is_duplicate(h):
+                self.stats["duplicates"] += 1
+                return None
+
+            self.hash_store.add(h)
+
+            # Step 5: Track stats
+            self.stats["generated"] += 1
+            if verdict == "pass":
+                self.stats["passed"] += 1
+            elif not verification["structural"]["passed"]:
+                self.stats["failed_structural"] += 1
+            elif not verification["semantic"]["passed"]:
+                self.stats["failed_semantic"] += 1
+            else:
+                self.stats["failed_judge"] += 1
+
+            if language == "en":
+                self.stats["en_count"] += 1
+            else:
+                self.stats["hi_en_count"] += 1
+
+            # Step 6: Build record
+            record = {
+                "system_prompt": self.system_prompt,
+                "user_query": user_query,
+                "response": raw_response,
+                "parsed_response": json.dumps(verification["parsed"]) if verification["parsed"] else None,
+                "generation_model_id": gen_model,
+                "language": language,
+                "llm_judge_id": JUDGE_MODEL,
+                "judge_verdict": verdict,
+                "hash": h,
+            }
+
+            return record
+
+        except Exception as e:
+            self.stats["errors"] = self.stats.get("errors", 0) + 1
             return None
 
-        self.hash_store.add(h)
+    def _scan_existing(self) -> tuple[int, int, int]:
+        """Scan existing JSONL to count EN/HI_EN already generated + load hashes.
 
-        # Step 5: Track stats
-        self.stats["generated"] += 1
-        if verdict == "pass":
-            self.stats["passed"] += 1
-        elif not verification["structural"]["passed"]:
-            self.stats["failed_structural"] += 1
-        elif not verification["semantic"]["passed"]:
-            self.stats["failed_semantic"] += 1
-        else:
-            self.stats["failed_judge"] += 1
-
-        if language == "en":
-            self.stats["en_count"] += 1
-        else:
-            self.stats["hi_en_count"] += 1
-
-        # Step 6: Build record
-        record = {
-            "system_prompt": self.system_prompt,
-            "user_query": user_query,
-            "response": raw_response,
-            "parsed_response": json.dumps(verification["parsed"]) if verification["parsed"] else None,
-            "generation_model_id": gen_model,
-            "language": language,
-            "llm_judge_id": JUDGE_MODEL,
-            "judge_verdict": verdict,
-            "hash": h,
-        }
-
-        return record
+        Returns (en_count, hi_en_count, total_count).
+        """
+        en_count = 0
+        hi_en_count = 0
+        total = 0
+        if not os.path.exists(DATASET_PATH):
+            return 0, 0, 0
+        with open(DATASET_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                    total += 1
+                    if rec.get("language") == "en":
+                        en_count += 1
+                    elif rec.get("language") == "hi_en":
+                        hi_en_count += 1
+                    # Load hash into dedup store
+                    h = rec.get("hash")
+                    if h:
+                        self.hash_store.add(h)
+                except json.JSONDecodeError:
+                    continue
+        return en_count, hi_en_count, total
 
     def run(
         self,
@@ -351,7 +409,7 @@ class DatasetOrchestrator:
         save_only_pass: bool = True,
         max_retries_per_sample: int = 3,
     ):
-        """Run the full dataset generation pipeline.
+        """Run the full dataset generation pipeline. Resumes from existing JSONL.
 
         Args:
             target_en: Number of English samples to generate
@@ -359,10 +417,25 @@ class DatasetOrchestrator:
             save_only_pass: If True, only save samples that pass all 3 verifiers
             max_retries_per_sample: Retries per failed sample before moving on
         """
-        total_target = target_en + target_hi_en
+        # Resume: scan existing JSONL
+        existing_en, existing_hi, existing_total = self._scan_existing()
+        remaining_en = max(0, target_en - existing_en)
+        remaining_hi = max(0, target_hi_en - existing_hi)
+
+        if existing_total > 0:
+            print(f"  RESUME: Found {existing_total} existing samples ({existing_en} EN, {existing_hi} HI_EN)")
+            print(f"  Need: {remaining_en} more EN + {remaining_hi} more HI_EN")
+            self.stats["en_count"] = existing_en
+            self.stats["hi_en_count"] = existing_hi
+
+        if remaining_en == 0 and remaining_hi == 0:
+            print(f"  Already at target! Nothing to generate.")
+            return
+
+        total_target = remaining_en + remaining_hi
         print(f"{'='*60}")
         print(f"  DATASET ORCHESTRATOR")
-        print(f"  Target: {target_en} EN + {target_hi_en} HI_EN = {total_target} total")
+        print(f"  Target: {remaining_en} EN + {remaining_hi} HI_EN = {total_target} new")
         print(f"  Save only pass: {save_only_pass}")
         print(f"  Output: {DATASET_PATH}")
         print(f"{'='*60}\n")
@@ -397,28 +470,34 @@ class DatasetOrchestrator:
             now = time.time()
             if now - last_print >= 5:  # Print every 5 seconds
                 elapsed = now - start_time
-                total_saved = self.stats["passed"] if save_only_pass else self.stats["generated"]
-                rate = total_saved / elapsed if elapsed > 0 else 0
-                eta = (total_target - total_saved) / rate if rate > 0 else 0
+                new_en = self.stats["en_count"] - existing_en
+                new_hi = self.stats["hi_en_count"] - existing_hi
+                total_new = new_en + new_hi
+                rate = total_new / elapsed if elapsed > 0 else 0
+                remaining = total_target - total_new
+                eta = remaining / rate if rate > 0 else 0
+                errors = self.stats.get("errors", 0)
                 print(
-                    f"  [{elapsed:.0f}s] EN={self.stats['en_count']} HI={self.stats['hi_en_count']} "
+                    f"  [{elapsed:.0f}s] EN={self.stats['en_count']}/{target_en} HI={self.stats['hi_en_count']}/{target_hi_en} "
                     f"passed={self.stats['passed']} failed_struct={self.stats['failed_structural']} "
                     f"failed_sem={self.stats['failed_semantic']} failed_judge={self.stats['failed_judge']} "
-                    f"dupes={self.stats['duplicates']} rate={rate:.1f}/s ETA={eta:.0f}s"
+                    f"dupes={self.stats['duplicates']} errors={errors} rate={rate:.1f}/s ETA={eta:.0f}s"
                 )
                 last_print = now
 
         # Final report
         elapsed = time.time() - start_time
+        errors = self.stats.get("errors", 0)
         print(f"\n{'='*60}")
         print(f"  COMPLETE in {elapsed:.0f}s")
-        print(f"  EN samples: {self.stats['en_count']}")
-        print(f"  HI_EN samples: {self.stats['hi_en_count']}")
+        print(f"  EN samples: {self.stats['en_count']} ({existing_en} existing + {self.stats['en_count'] - existing_en} new)")
+        print(f"  HI_EN samples: {self.stats['hi_en_count']} ({existing_hi} existing + {self.stats['hi_en_count'] - existing_hi} new)")
         print(f"  Passed: {self.stats['passed']}")
         print(f"  Failed (structural): {self.stats['failed_structural']}")
         print(f"  Failed (semantic): {self.stats['failed_semantic']}")
         print(f"  Failed (judge): {self.stats['failed_judge']}")
         print(f"  Duplicates skipped: {self.stats['duplicates']}")
+        print(f"  Errors (API/parse): {errors}")
         print(f"  Output: {DATASET_PATH}")
         print(f"{'='*60}")
 
