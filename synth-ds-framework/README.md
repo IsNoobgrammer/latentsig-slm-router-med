@@ -46,25 +46,25 @@ This dataset trains SLMs (1B–3B parameters) to act as **reliable structured to
 
 | Metric | Value |
 |--------|-------|
-| **Total Samples** | 1,000 |
-| **English** | 500 (50.0%) |
-| **Hinglish** | 500 (50.0%) |
+| **Total Samples** | 2,000 |
+| **English** | 1,000 (50.0%) |
+| **Hinglish** | 1,000 (50.0%) |
 | **Pass Rate** | 100% (all 3-layer verified) |
 | **Duplicates** | 0 |
-| **Avg Query Length (EN)** | 156 chars |
-| **Avg Query Length (HI)** | 179 chars |
+| **Avg Query Length (EN)** | 154 chars |
+| **Avg Query Length (HI)** | 176 chars |
 
 ### Tool Distribution
 
 ![Tool Distribution](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/tool_distribution.png)
 
-All 7 tools are **balanced at ~142 samples each** — the model sees equal representation of every tool during training.
+All 7 tools are **balanced at ~286 samples each** — the model sees equal representation of every tool during training.
 
 ### Category Distribution
 
 ![Category Distribution](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/category_distribution.png)
 
-Emergency cases dominate (44.6%) as expected in medical triage, followed by urgent (34.5%), semi-urgent (10.8%), and routine (10.1%).
+Emergency cases dominate (44.2%) as expected in medical triage, followed by urgent (35.6%), semi-urgent (11.1%), and routine (9.0%).
 
 ### Language Split
 
@@ -86,7 +86,7 @@ This heatmap shows how each tool maps to urgency categories. Note: `emergency_di
 
 ![Query Length Distribution](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/query_length_dist.png)
 
-Hinglish queries are slightly longer on average (179 vs 156 chars) due to Hindi conversational style mixed with English medical terms.
+Hinglish queries are slightly longer on average (176 vs 154 chars) due to Hindi conversational style mixed with English medical terms.
 
 ---
 
