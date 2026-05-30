@@ -61,35 +61,67 @@ class PlaceholderEngine:
 # ── Unsloth Engine (for actual inference) ────────────────────
 
 class UnslothEngine:
-    """Load fine-tuned model via Unsloth + LoRA adapter."""
+    """Load fine-tuned model via Unsloth + LoRA adapter.
 
-    def __init__(self, base_model: str, adapter_path: str, max_seq_length: int = 2048, load_in_4bit: bool = True):
+    Auto-downloads adapter from Hub if not found locally.
+    Supports batch inference for eval workloads.
+    """
+
+    def __init__(self, base_model: str, adapter_path: str,
+                 max_seq_length: int = 2048, load_in_4bit: bool = True,
+                 max_new_tokens: int = 300, temperature: float = 0.1):
         self.base_model = base_model
         self.adapter_path = adapter_path
         self.max_seq_length = max_seq_length
         self.load_in_4bit = load_in_4bit
+        self.max_new_tokens = max_new_tokens
+        self.temperature = temperature
         self.model = None
         self.tokenizer = None
+        self.call_count = 0
 
     def load(self):
-        """Load model + adapter."""
+        """Load model + adapter. Auto-downloads from Hub if needed."""
         from unsloth import FastLanguageModel
+        import os
 
+        # Auto-download adapter if not local
+        if self.adapter_path and not os.path.isdir(self.adapter_path):
+            print(f"Adapter not found locally: {self.adapter_path}")
+            print(f"Downloading from Hub...")
+            from huggingface_hub import snapshot_download
+            self.adapter_path = snapshot_download(
+                repo_id=self.adapter_path,
+                ignore_patterns=["*.gguf", "*.bin", "README.md"],
+            )
+            print(f"  Downloaded to: {self.adapter_path}")
+
+        print(f"Loading model: {self.base_model}")
         self.model, self.tokenizer = FastLanguageModel.from_pretrained(
-            model_name=self.base_model,
+            model_name=self.adapter_path if os.path.isdir(self.adapter_path) else self.base_model,
             max_seq_length=self.max_seq_length,
             load_in_4bit=self.load_in_4bit,
         )
-        self.model = FastLanguageModel.get_peft_model(
-            self.model,
-            r=16,
-            lora_alpha=32,
-            target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
-        )
-        # Load adapter weights
-        if self.adapter_path:
-            self.model.load_adapter(self.adapter_path)
+
+        # Apply LoRA if loading from base model
+        if os.path.isdir(self.adapter_path):
+            # Adapter already merged in from_pretrained
+            pass
+        else:
+            self.model = FastLanguageModel.get_peft_model(
+                self.model,
+                r=16,
+                lora_alpha=32,
+                target_modules=["q_proj", "v_proj", "k_proj", "o_proj",
+                                "gate_proj", "up_proj", "down_proj"],
+                lora_dropout=0,
+                use_gradient_checkpointing="unsloth",
+            )
+            if self.adapter_path:
+                self.model.load_adapter(self.adapter_path)
+
         FastLanguageModel.for_inference(self.model)
+        print(f"  Model loaded. VRAM: {__import__('torch').cuda.memory_allocated()/1e9:.1f}GB")
 
     def generate(self, system_prompt: str, user_prompt: str) -> tuple[str, float]:
         """Generate response using the fine-tuned model."""
@@ -105,19 +137,95 @@ class UnslothEngine:
         ).to("cuda")
 
         start = time.time()
-        with torch.no_grad():
+        with torch.inference_mode():
             outputs = self.model.generate(
                 input_ids=inputs,
-                max_new_tokens=300,
-                temperature=0.1,
+                max_new_tokens=self.max_new_tokens,
+                temperature=self.temperature,
                 do_sample=True,
+                use_cache=True,
             )
         latency = time.time() - start
 
-        # Decode only new tokens
         new_tokens = outputs[0][inputs.shape[-1]:]
         response = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
+        self.call_count += 1
         return response, latency
+
+    def generate_batch(self, system_prompt: str, user_prompts: list[str],
+                       batch_size: int = 4) -> list[tuple[str, float]]:
+        """Batch generate using PyTorch padded batching.
+
+        Tokenizes all queries, pads to same length, generates in batches.
+
+        Args:
+            system_prompt: shared system prompt for all queries
+            user_prompts: list of user queries
+            batch_size: how many sequences per batch (limited by VRAM)
+
+        Returns:
+            list of (response_text, latency_seconds) tuples
+        """
+        import torch
+        import time as _time
+
+        results = [None] * len(user_prompts)
+
+        # Tokenize all queries
+        all_input_ids = []
+        for prompt in user_prompts:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ]
+            ids = self.tokenizer.apply_chat_template(
+                messages, tokenize=True, add_generation_prompt=True, return_tensors="pt"
+            )
+            all_input_ids.append(ids.squeeze(0))
+
+        # Pad to same length within each batch
+        total_start = _time.time()
+
+        for batch_start in range(0, len(user_prompts), batch_size):
+            batch_end = min(batch_start + batch_size, len(user_prompts))
+            batch_ids = all_input_ids[batch_start:batch_end]
+
+            # Pad to max length in this batch
+            max_len = max(ids.shape[0] for ids in batch_ids)
+            padded = torch.zeros(len(batch_ids), max_len, dtype=torch.long, device="cuda")
+            attention_mask = torch.zeros(len(batch_ids), max_len, dtype=torch.long, device="cuda")
+
+            for i, ids in enumerate(batch_ids):
+                seq_len = ids.shape[0]
+                padded[i, :seq_len] = ids
+                attention_mask[i, :seq_len] = 1
+
+            # Generate
+            batch_start_time = _time.time()
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    input_ids=padded,
+                    attention_mask=attention_mask,
+                    max_new_tokens=self.max_new_tokens,
+                    temperature=self.temperature,
+                    do_sample=True,
+                    use_cache=True,
+                )
+            batch_latency = _time.time() - batch_start_time
+
+            # Decode each output
+            for i, (ids, out) in enumerate(zip(batch_ids, outputs)):
+                new_tokens = out[ids.shape[0]:]
+                response = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
+                global_idx = batch_start + i
+                results[global_idx] = (response, batch_latency / len(batch_ids))
+
+        total = _time.time() - total_start
+        self.call_count += len(user_prompts)
+        print(f"  Batch: {len(user_prompts)} queries in {total:.1f}s "
+              f"({total/len(user_prompts):.2f}s/query, batch_size={batch_size})")
+
+        return results
 
 
 # ── Mistral API Engine (baseline) ────────────────────────────

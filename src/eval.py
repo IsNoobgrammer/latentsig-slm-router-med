@@ -513,9 +513,12 @@ def run_eval(
             # Batch mode: process all queries at once
             from src.prompts import SYSTEM_PROMPT, build_user_prompt
             queries = [build_user_prompt(s.query) for s in samples]
-            print(f"  Batch mode: {len(queries)} queries, 8 parallel...")
+            # Auto batch size: smaller for GPU-limited engines
+            default_batch = 4 if "unsloth" in engine_name.lower() or "slm" in engine_name.lower() else 8
+            batch_size = getattr(args, 'batch_size', None) or default_batch
+            print(f"  Batch mode: {len(queries)} queries, {batch_size} parallel...")
 
-            batch_results = engine.generate_batch(SYSTEM_PROMPT, queries, batch_size=8)
+            batch_results = engine.generate_batch(SYSTEM_PROMPT, queries, batch_size=batch_size)
 
             for i, (sample, (raw_output, latency)) in enumerate(zip(samples, batch_results)):
                 from src.parser import parse_model_output
