@@ -12,6 +12,7 @@ Inference and evaluation only. Training is done.
 # Pre-built CUDA wheel (auto-detects CUDA version from index)
 !pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu128 --no-cache-dir --upgrade --force-reinstall --ignore-installed
 !git clone https://github.com/IsNoobgrammer/latentsig-slm-router-med.git -q
+!pip install -e latentsig-slm-router-med -q
 %cd latentsig-slm-router-med
 ```
 
