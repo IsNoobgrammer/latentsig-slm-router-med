@@ -220,7 +220,7 @@ class TriageAgent:
 
         self._log(StepLog(
             step_type="final_answer", attempt=attempt + 1,
-            content=final_answer, latency_ms=response_latency * 1000
+            content=final_answer, latency_ms=total_latency
         ))
 
         return AgentResult(
