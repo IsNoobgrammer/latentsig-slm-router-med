@@ -477,6 +477,7 @@ def run_eval(
     max_retries: int = 3,
     use_agent: bool = False,
     save_path: str = None,
+    batch_size: int = None,
 ) -> list[AggregateMetrics]:
     """Run eval across multiple engines.
 
@@ -486,6 +487,7 @@ def run_eval(
         max_retries: max parse retries per sample
         use_agent: if True, use full TriageAgent (two-stage); if False, single-stage tool call only
         save_path: path to save raw results JSONL (optional)
+        batch_size: batch size for parallel inference (None = auto)
     """
     all_metrics = []
     all_results = []
@@ -515,10 +517,10 @@ def run_eval(
             queries = [build_user_prompt(s.query) for s in samples]
             # Auto batch size: smaller for GPU-limited engines
             default_batch = 4 if "unsloth" in engine_name.lower() or "slm" in engine_name.lower() else 8
-            batch_size = getattr(args, 'batch_size', None) or default_batch
-            print(f"  Batch mode: {len(queries)} queries, {batch_size} parallel...")
+            effective_batch = batch_size or default_batch
+            print(f"  Batch mode: {len(queries)} queries, {effective_batch} parallel...")
 
-            batch_results = engine.generate_batch(SYSTEM_PROMPT, queries, batch_size=batch_size)
+            batch_results = engine.generate_batch(SYSTEM_PROMPT, queries, batch_size=effective_batch)
 
             for i, (sample, (raw_output, latency)) in enumerate(zip(samples, batch_results)):
                 from src.parser import parse_model_output
@@ -745,6 +747,7 @@ def main():
         max_retries=args.max_retries,
         use_agent=args.use_agent,
         save_path=args.output,
+        batch_size=args.batch_size,
     )
 
     return metrics
