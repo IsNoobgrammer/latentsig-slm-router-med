@@ -16,7 +16,7 @@ import json
 from dataclasses import dataclass, field
 
 from src.config import MAX_RETRIES
-from src.prompts import SYSTEM_PROMPT, build_user_prompt, build_retry_prompt
+from src.prompts import SYSTEM_PROMPT, ASSISTANT_SYSTEM_PROMPT, build_user_prompt, build_retry_prompt
 from src.parser import parse_model_output, ParseResult
 from src.tools import execute_tool, get_tool_log
 from src.inference import InferenceEngine, create_engine
@@ -195,10 +195,12 @@ class TriageAgent:
                     ))
 
         # ── Step 5: OBSERVATION — Execute tool ──
+        observation = None
         if triage_decision:
             tool_name = triage_decision["tool"]
             tool_args = triage_decision["args"]
             tool_result = execute_tool(tool_name, tool_args)
+            observation = tool_result
             tool_call_id = tool_result.get("dispatch_id", tool_result.get("triage_id", tool_result.get("check_id", "unknown")))
 
             self._log(StepLog(
@@ -209,13 +211,16 @@ class TriageAgent:
                 tool_result=tool_result
             ))
 
-        # ── Step 6: FINAL ANSWER ──
+        # ── Step 6: FINAL ANSWER — SLM synthesizes response ──
+        response_start = time.time()
+        final_answer, response_latency = self._synthesize_answer(
+            query, triage_decision, observation, is_fallback
+        )
         total_latency = (time.time() - start_time) * 1000
-        final_answer = self._synthesize_answer(triage_decision, is_fallback)
 
         self._log(StepLog(
             step_type="final_answer", attempt=attempt + 1,
-            content=final_answer, latency_ms=total_latency
+            content=final_answer, latency_ms=response_latency * 1000
         ))
 
         return AgentResult(
@@ -230,41 +235,28 @@ class TriageAgent:
             tool_call_id=tool_call_id,
         )
 
-    def _synthesize_answer(self, decision: dict | None, is_fallback: bool) -> str:
-        """Synthesize human-readable final answer from triage decision + tool result."""
+    def _synthesize_answer(self, query: str, decision: dict | None,
+                           observation: dict | None, is_fallback: bool) -> tuple[str, float]:
+        """Synthesize final answer via SLM (Stage 2).
+
+        Returns (answer_text, latency_seconds).
+        """
         if not decision:
-            return "ERROR: Could not process the query. Please try again."
+            return "ERROR: Could not process the query. Please try again.", 0.0
 
-        cat = decision.get("category", "unknown")
-        dept = decision.get("department", "unknown")
-        tool = decision.get("tool", "unknown")
-        reasoning = decision.get("reasoning", "")
-        args = decision.get("args", {})
+        # Build context for the assistant SLM
+        context = f"""Patient query: {query}
 
-        # Find the observation from steps
-        observation = None
-        for step in reversed(self.steps):
-            if step.step_type == "observation":
-                observation = step.tool_result
-                break
+Triage decision:
+{json.dumps(decision, indent=2)}
 
-        # Build answer
-        lines = []
+Tool result:
+{json.dumps(observation, indent=2) if observation else "No result"}
 
-        if is_fallback:
-            lines.append("FALLBACK: System could not process the input correctly.")
-            lines.append("Over-triage safety rule applied.")
-            lines.append("")
+Please provide a clear, professional triage summary to the user."""
 
-        urgency_emoji = {"emergency": "EMERGENCY", "urgent": "URGENT", "semi_urgent": "SEMI-URGENT", "routine": "ROUTINE"}
-        lines.append(f"[{urgency_emoji.get(cat, cat).upper()}] Department: {dept}")
-        lines.append(f"Reasoning: {reasoning}")
-        lines.append(f"Tool: {tool}")
-
-        if observation:
-            lines.append(f"Result: {json.dumps(observation, indent=2)}")
-
-        return "\n".join(lines)
+        answer, latency = self.engine.generate(ASSISTANT_SYSTEM_PROMPT, context, max_tokens=500)
+        return answer, latency
 
 
 # ── Convenience Function ─────────────────────────────────────
