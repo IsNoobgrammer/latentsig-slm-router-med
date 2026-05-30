@@ -6,13 +6,13 @@
 
 <br>
 
-[![Training](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1fakehai/training-latentsig-slm-router)
-[![Agent](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1fakehai/latentsig-slm-router-agent)
-[![W&B](https://img.shields.io/badge/Weights_&_Biases-Report-FFBE00?logo=weightsandbiases)](https://wandb.ai/ablations-tinycompany-ai/latentsig-med-triage-router/reports/LatentSig-SLM-Router--VmlldzoxNzA2MzQ3OA)
+[![Try Training](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1fakehai/training-latentsig-slm-router)
+[![Try Agent](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1fakehai/latentsig-slm-router-agent)
+[![W&B Report](https://img.shields.io/badge/Weights_&_Biases-Report-FFBE00?logo=weightsandbiases)](https://wandb.ai/ablations-tinycompany-ai/latentsig-med-triage-router/reports/LatentSig-SLM-Router--VmlldzoxNzA2MzQ3OA)
 [![HF Dataset](https://img.shields.io/badge/🤗_HuggingFace-Dataset-FFD21E?logo=huggingface)](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router)
 [![HF Model](https://img.shields.io/badge/🤗_HuggingFace-GGUF-FFD21E?logo=huggingface)](https://huggingface.co/fhai50032/latentsig-med-router-qwen3-4b-gguf)
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?logo=github)](https://github.com/IsNoobgrammer/latentsig-slm-router-med)
-[![Eval](https://img.shields.io/badge/📊_Eval-Results-blue)](eval_result.md)
+[![Eval Results](https://img.shields.io/badge/📊_Eval-Results-blue)](eval_result.md)
 
 <br>
 
