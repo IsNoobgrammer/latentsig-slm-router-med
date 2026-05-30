@@ -64,7 +64,6 @@ class UnslothEngine:
     """Load fine-tuned model via Unsloth + LoRA adapter.
 
     Auto-downloads adapter from Hub if not found locally.
-    Supports batch inference for eval workloads.
     """
 
     def __init__(self, base_model: str, adapter_path: str,
@@ -105,7 +104,6 @@ class UnslothEngine:
 
         # Apply LoRA if loading from base model
         if os.path.isdir(self.adapter_path):
-            # Adapter already merged in from_pretrained
             pass
         else:
             self.model = FastLanguageModel.get_peft_model(
@@ -151,81 +149,6 @@ class UnslothEngine:
         response = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
         self.call_count += 1
         return response, latency
-
-    def generate_batch(self, system_prompt: str, user_prompts: list[str],
-                       batch_size: int = 4) -> list[tuple[str, float]]:
-        """Batch generate using PyTorch padded batching.
-
-        Tokenizes all queries, pads to same length, generates in batches.
-
-        Args:
-            system_prompt: shared system prompt for all queries
-            user_prompts: list of user queries
-            batch_size: how many sequences per batch (limited by VRAM)
-
-        Returns:
-            list of (response_text, latency_seconds) tuples
-        """
-        import torch
-        import time as _time
-
-        results = [None] * len(user_prompts)
-
-        # Tokenize all queries
-        all_input_ids = []
-        for prompt in user_prompts:
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt},
-            ]
-            ids = self.tokenizer.apply_chat_template(
-                messages, tokenize=True, add_generation_prompt=True, return_tensors="pt"
-            )
-            all_input_ids.append(ids.squeeze(0))
-
-        # Pad to same length within each batch
-        total_start = _time.time()
-
-        for batch_start in range(0, len(user_prompts), batch_size):
-            batch_end = min(batch_start + batch_size, len(user_prompts))
-            batch_ids = all_input_ids[batch_start:batch_end]
-
-            # Pad to max length in this batch
-            max_len = max(ids.shape[0] for ids in batch_ids)
-            padded = torch.zeros(len(batch_ids), max_len, dtype=torch.long, device="cuda")
-            attention_mask = torch.zeros(len(batch_ids), max_len, dtype=torch.long, device="cuda")
-
-            for i, ids in enumerate(batch_ids):
-                seq_len = ids.shape[0]
-                padded[i, :seq_len] = ids
-                attention_mask[i, :seq_len] = 1
-
-            # Generate
-            batch_start_time = _time.time()
-            with torch.inference_mode():
-                outputs = self.model.generate(
-                    input_ids=padded,
-                    attention_mask=attention_mask,
-                    max_new_tokens=self.max_new_tokens,
-                    temperature=self.temperature,
-                    do_sample=True,
-                    use_cache=True,
-                )
-            batch_latency = _time.time() - batch_start_time
-
-            # Decode each output
-            for i, (ids, out) in enumerate(zip(batch_ids, outputs)):
-                new_tokens = out[ids.shape[0]:]
-                response = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
-                global_idx = batch_start + i
-                results[global_idx] = (response, batch_latency / len(batch_ids))
-
-        total = _time.time() - total_start
-        self.call_count += len(user_prompts)
-        print(f"  Batch: {len(user_prompts)} queries in {total:.1f}s "
-              f"({total/len(user_prompts):.2f}s/query, batch_size={batch_size})")
-
-        return results
 
 
 # ── Mistral API Engine (baseline) ────────────────────────────
@@ -299,8 +222,6 @@ class LlamaCppEngine:
     ~3-5x faster than PyTorch on T4. Uses quantized weights
     with optimized KV cache and matmul kernels.
 
-    Supports batch inference for eval workloads.
-
     Requires: pip install llama-cpp-python
     """
 
@@ -328,7 +249,7 @@ class LlamaCppEngine:
             n_batch=self.n_batch,
             verbose=False,
         )
-        print(f"  GGUF loaded. Context: {self.n_ctx}, GPU layers: {self.n_gpu_layers}, batch: {self.n_batch}")
+        print(f"  GGUF loaded. Context: {self.n_ctx}, GPU layers: {self.n_gpu_layers}")
 
     def generate(self, system_prompt: str, user_prompt: str) -> tuple[str, float]:
         """Generate response. Returns (text, latency_seconds)."""
@@ -353,47 +274,6 @@ class LlamaCppEngine:
         except Exception as e:
             latency = _time.time() - start
             return json.dumps({"error": str(e)}), latency
-
-    def generate_batch(self, system_prompt: str, user_prompts: list[str],
-                       batch_size: int = 8) -> list[tuple[str, float]]:
-        """Batch generate for multiple queries.
-
-        Shares the same system prompt across all queries.
-        Processes in batches of `batch_size` using ThreadPoolExecutor.
-
-        Args:
-            system_prompt: shared system prompt for all queries
-            user_prompts: list of user queries
-            batch_size: how many to process concurrently
-
-        Returns:
-            list of (response_text, latency_seconds) tuples
-        """
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        import time as _time
-
-        results = [None] * len(user_prompts)
-
-        def _generate_one(idx, prompt):
-            return idx, self.generate(system_prompt, prompt)
-
-        start = _time.time()
-
-        with ThreadPoolExecutor(max_workers=batch_size) as executor:
-            futures = [
-                executor.submit(_generate_one, i, prompt)
-                for i, prompt in enumerate(user_prompts)
-            ]
-            for future in as_completed(futures):
-                idx, (text, lat) = future.result()
-                results[idx] = (text, lat)
-
-        total = _time.time() - start
-        self.call_count += len(user_prompts)
-        print(f"  Batch: {len(user_prompts)} queries in {total:.1f}s "
-              f"({total/len(user_prompts):.2f}s/query, {batch_size} parallel)")
-
-        return results
 
 
 # ── Factory ──────────────────────────────────────────────────
