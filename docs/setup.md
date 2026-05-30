@@ -9,7 +9,8 @@ Inference and evaluation only. Training is done.
 ### Cell 1: Install
 
 ```python
-!pip install llama-cpp-python huggingface_hub datasets -q
+# Pre-built CUDA wheel (10s install vs 10min build-from-source)
+!pip install "https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.23-cu125/llama_cpp_python-0.3.23-py3-none-linux_x86_64.whl"
 !git clone https://github.com/IsNoobgrammer/latentsig-slm-router-med.git -q
 %cd latentsig-slm-router-med
 ```
