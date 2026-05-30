@@ -31,7 +31,7 @@
 
 ![Latency Comparison](visuals/eval_latency_comparison.png)
 
-SLM latency is 12.5s (PyTorch on T4, no optimization). Mistral API is 1.5s. GGUF would be ~2-3s.
+All engines are ~12.5s on T4 for the 4B model. Unsloth and GGUF show no significant speed difference — latency is dominated by model inference, not the engine.
 
 ---
 
@@ -158,8 +158,7 @@ The SLM gets urgency right 87.5% of the time, but picks the wrong tool.
 
 ### Inference
 
-10. **GGUF for speed** — 12.5s → 2-3s latency
-11. **Lower temperature** — 0.1 → 0.01 for deterministic routing
+10. **Lower temperature** — 0.1 → 0.01 for deterministic routing
 
 ---
 
@@ -172,6 +171,8 @@ The SLM gets urgency right 87.5% of the time, but picks the wrong tool.
 | 3 | System prompt emergency rule | +10% | Trivial |
 | 4 | LoRA rank 16 → 32 | +5% | Low |
 | 5 | Rule-based safety net | +10% | Low |
-| 6 | GGUF inference | 3-4x faster | Low |
+| 6 | Lower temperature to 0.01 | +2-3% | Trivial |
 
 **Target: 80-85% tool accuracy after fixes.**
+
+**Latency:** Both Unsloth and GGUF are ~12.5s on T4. No significant speed difference observed. Latency is dominated by the 4B model inference, not the engine.

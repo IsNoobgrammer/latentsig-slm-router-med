@@ -40,8 +40,8 @@ The SLM runs per query in a 5-step ReAct loop:
 |--------|------|-------|----------|----------|
 | **Placeholder** | `--mode placeholder` | Instant | ~60% | Pipeline testing, CI |
 | **Mistral API** | `--mode mistral` | ~1.5s | 80-87% | Baseline comparison |
-| **Unsloth** | `--mode slm` | ~3-6s | Best | Full accuracy, GPU required |
-| **llama.cpp (GGUF)** | `--mode gguf` | ~1-3s | Good | Fast inference, any hardware |
+| **Unsloth** | `--mode slm` | ~12.5s | Best | Full accuracy, GPU required |
+| **llama.cpp (GGUF)** | `--mode gguf` | ~12.5s | Good | Alternative to Unsloth |
 
 ### Agent Loop
 
