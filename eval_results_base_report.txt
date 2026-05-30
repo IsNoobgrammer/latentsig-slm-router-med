@@ -1,0 +1,49 @@
+========================================================================
+  LatentSig Medical Triage Router — Eval Report
+========================================================================
+
+Metric                               qwen3-4b-base
+──────────────────────────────────────────────────
+Tool Accuracy                                82.5%
+Category Accuracy                            90.0%
+Parse Success Rate                          100.0%
+Fallback Rate                                 0.0%
+──────────────────────────────────────────────────
+Avg Latency (ms)                              9866
+P50 Latency (ms)                             10007
+P95 Latency (ms)                             13583
+──────────────────────────────────────────────────
+Avg Retries                                   0.00
+Total Retries                                    0
+──────────────────────────────────────────────────
+Total Samples                                   40
+
+────────────────────────────────────────────────────────────────────────
+  qwen3-4b-base — Per-Tool Accuracy
+────────────────────────────────────────────────────────────────────────
+  Tool                          Correct    Total      Acc
+  ──────────────────────────── ──────── ──────── ────────
+  emergency_dispatch                 16       16  100.0%
+  lab_order_suggestion                2        2  100.0%
+  medication_check                    6        6  100.0%
+  mental_health_triage                5        5  100.0%
+  specialist_referral                 1        5   20.0%
+  triage_assessment                   0        3    0.0%
+  vital_signs_analysis                3        3  100.0%
+
+────────────────────────────────────────────────────────────────────────
+  qwen3-4b-base — Per-Language Accuracy
+────────────────────────────────────────────────────────────────────────
+  Language      Correct    Total      Acc
+  ──────────── ──────── ──────── ────────
+  English            17       20   85.0%
+  Hinglish           16       20   80.0%
+
+────────────────────────────────────────────────────────────────────────
+  qwen3-4b-base — Top Confusions (predicted → actual)
+────────────────────────────────────────────────────────────────────────
+    lab_order_suggestion         → specialist_referral          (4x)
+    vital_signs_analysis         → triage_assessment            (2x)
+    emergency_dispatch           → triage_assessment            (1x)
+
+========================================================================

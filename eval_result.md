@@ -14,16 +14,17 @@
 
 ![Accuracy Comparison](visuals/eval_accuracy_comparison.png)
 
-| Metric | Mistral Small | Mistral Large | SLM (Ours) |
-|--------|:------------:|:------------:|:----------:|
-| **Tool Accuracy** | 80.0% | **87.5%** | 60.0% |
-| **Category Accuracy** | 90.0% | 90.0% | 87.5% |
-| **Parse Success** | 100% | 100% | 100% |
-| **Fallback Rate** | 0% | 0% | 0% |
-| **Avg Latency** | **1,464ms** | 3,097ms | 12,559ms |
-| **P50 Latency** | **1,446ms** | 3,077ms | 12,216ms |
-| **P95 Latency** | **1,828ms** | 4,462ms | 17,858ms |
-| **Total Retries** | 0 | 0 | 0 |
+| Metric | Qwen3-4B Base | SLM (Fine-tuned) | Mistral Small | Mistral Large |
+|--------|:------------:|:----------------:|:------------:|:------------:|
+| **Tool Accuracy** | **82.5%** | 60.0% | 80.0% | **87.5%** |
+| **Category Accuracy** | 90.0% | 87.5% | 90.0% | 90.0% |
+| **Parse Success** | 100% | 100% | 100% | 100% |
+| **Fallback Rate** | 0% | 0% | 0% | 0% |
+| **Avg Latency** | 9,866ms | 12,559ms | **1,464ms** | 3,097ms |
+| **P50 Latency** | 10,007ms | 12,216ms | **1,446ms** | 3,077ms |
+| **P95 Latency** | 13,583ms | 17,858ms | **1,828ms** | 4,462ms |
+
+**Critical finding: Fine-tuning HURT the model.** The base Qwen3-4B (82.5%) outperforms the fine-tuned SLM (60.0%) by 22.5 percentage points.
 
 ---
 
@@ -31,7 +32,7 @@
 
 ![Latency Comparison](visuals/eval_latency_comparison.png)
 
-All engines are ~12.5s on T4 for the 4B model. Unsloth and GGUF show no significant speed difference — latency is dominated by model inference, not the engine.
+All local models are ~10-12.5s on T4. Mistral API is 7-8x faster (1.5s) because it's a hosted service, not local inference.
 
 ---
 
@@ -39,51 +40,83 @@ All engines are ~12.5s on T4 for the 4B model. Unsloth and GGUF show no signific
 
 ![Tool Heatmap](visuals/eval_tool_heatmap.png)
 
-| Tool | GT Count | Mistral Small | Mistral Large | SLM (Ours) |
-|------|:--------:|:------------:|:------------:|:----------:|
-| `emergency_dispatch` | 16 | 100.0% | 100.0% | **25.0%** |
-| `medication_check` | 6 | 83.3% | 83.3% | 100.0% |
-| `mental_health_triage` | 5 | 100.0% | 100.0% | 100.0% |
-| `specialist_referral` | 5 | 20.0% | **80.0%** | 60.0% |
-| `vital_signs_analysis` | 3 | 100.0% | 100.0% | 100.0% |
-| `triage_assessment` | 3 | 33.3% | 33.3% | 33.3% |
-| `lab_order_suggestion` | 2 | 50.0% | 50.0% | 100.0% |
+| Tool | GT Count | Qwen3-4B Base | SLM (Fine-tuned) | Mistral Small | Mistral Large |
+|------|:--------:|:------------:|:----------------:|:------------:|:------------:|
+| `emergency_dispatch` | 16 | **100.0%** | 25.0% | **100.0%** | **100.0%** |
+| `medication_check` | 6 | **100.0%** | **100.0%** | 83.3% | 83.3% |
+| `mental_health_triage` | 5 | **100.0%** | **100.0%** | **100.0%** | **100.0%** |
+| `specialist_referral` | 5 | 20.0% | 60.0% | 20.0% | **80.0%** |
+| `vital_signs_analysis` | 3 | **100.0%** | **100.0%** | **100.0%** | **100.0%** |
+| `triage_assessment` | 3 | 0.0% | 33.3% | 33.3% | 33.3% |
+| `lab_order_suggestion` | 2 | **100.0%** | **100.0%** | 50.0% | 50.0% |
 
 ---
 
-## SLM: The Imbalance Problem
+## Base vs Fine-tuned: What Training Destroyed
 
-![SLM Distribution](visuals/eval_slm_distribution.png)
+![Base vs Fine-tuned](visuals/eval_base_vs_finetuned.png)
 
-The SLM predicts `triage_assessment` 12 times (should be 3). It predicts `emergency_dispatch` only 4 times (should be 16). The model defaults to the "front desk" tool instead of calling the ambulance.
+| Tool | Base | Fine-tuned | Change |
+|------|:----:|:----------:|:------:|
+| `emergency_dispatch` | 100% | 25% | **-75%** |
+| `medication_check` | 100% | 100% | 0% |
+| `mental_health_triage` | 100% | 100% | 0% |
+| `specialist_referral` | 20% | 60% | **+40%** |
+| `vital_signs_analysis` | 100% | 100% | 0% |
+| `triage_assessment` | 0% | 33% | **+33%** |
+| `lab_order_suggestion` | 100% | 100% | 0% |
+
+Fine-tuning improved `specialist_referral` (+40%) and `triage_assessment` (+33%), but catastrophically destroyed `emergency_dispatch` (-75%). Net effect: -22.5% overall accuracy.
+
+---
+
+## SLM Prediction Distribution
+
+| Tool | Ground Truth | Base Predictions | Fine-tuned Predictions |
+|------|:----------:|:----------------:|:---------------------:|
+| `emergency_dispatch` | 16 | 16 | 4 |
+| `triage_assessment` | 3 | 0 | 12 |
+| `medication_check` | 6 | 6 | 6 |
+| `mental_health_triage` | 5 | 5 | 5 |
+| `vital_signs_analysis` | 3 | 3 | 5 |
+| `lab_order_suggestion` | 2 | 7 | 5 |
+| `specialist_referral` | 5 | 3 | 3 |
+
+The base model correctly predicts 16 emergency_dispatch calls. The fine-tuned model predicts only 4 — the training taught it to default to `triage_assessment` instead.
 
 ---
 
 ## Per-Language Accuracy
 
-| Language | Mistral Small | Mistral Large | SLM (Ours) |
-|----------|:------------:|:------------:|:----------:|
-| English | 85.0% | 90.0% | 60.0% |
-| Hinglish | 75.0% | 85.0% | 60.0% |
+| Language | Qwen3-4B Base | SLM (Fine-tuned) | Mistral Small | Mistral Large |
+|----------|:------------:|:----------------:|:------------:|:------------:|
+| English | 85.0% | 60.0% | 85.0% | 90.0% |
+| Hinglish | 80.0% | 60.0% | 75.0% | 85.0% |
 
 ---
 
-## Per-Category Accuracy (SLM)
+## Per-Category Accuracy
 
-| Category | Correct | Total | Accuracy |
-|----------|:-------:|:-----:|:--------:|
-| emergency | 24 | 25 | 96.0% |
-| urgent | 10 | 11 | 90.9% |
-| semi_urgent | 1 | 2 | 50.0% |
-| routine | 0 | 2 | 0.0% |
-
-The SLM gets urgency right 87.5% of the time, but picks the wrong tool.
+| Category | Qwen3-4B Base | SLM (Fine-tuned) |
+|----------|:------------:|:----------------:|
+| emergency | 25/25 = 100% | 24/25 = 96% |
+| urgent | 9/11 = 82% | 10/11 = 91% |
+| semi_urgent | 0/2 = 0% | 1/2 = 50% |
+| routine | 1/2 = 50% | 0/2 = 0% |
 
 ---
 
 ## Confusion Matrices
 
-### SLM (Ours) — 16 errors
+### Qwen3-4B Base — 7 errors
+
+| Predicted → Actual | Count |
+|:-------------------|:-----:|
+| `lab_order_suggestion` → `specialist_referral` | 4 |
+| `vital_signs_analysis` → `triage_assessment` | 2 |
+| `emergency_dispatch` → `triage_assessment` | 1 |
+
+### SLM (Fine-tuned) — 16 errors
 
 | Predicted → Actual | Count |
 |:-------------------|:-----:|
@@ -115,50 +148,48 @@ The SLM gets urgency right 87.5% of the time, but picks the wrong tool.
 
 ---
 
-## What's Working (SLM)
+## Diagnosis: What Went Wrong with Fine-tuning
 
-- **100% accuracy** on: `medication_check`, `mental_health_triage`, `vital_signs_analysis`, `lab_order_suggestion`
-- **Category accuracy 87.5%** — knows urgency level even when picking wrong tool
-- **Parse success 100%** — always outputs valid JSON
-- **Zero fallbacks** — never needs safety override
+The fine-tuning catastrophically degraded `emergency_dispatch` accuracy (100% → 25%) while marginally improving `specialist_referral` (20% → 60%) and `triage_assessment` (0% → 33%). Net result: -22.5% overall accuracy.
+
+### Root Causes
+
+1. **Training data quality** — the generated dataset likely has noisy or incorrect tool labels for emergency cases. The model learned to distrust emergency signals.
+
+2. **Overfitting to triage_assessment** — the most common tool in training data. The model defaults to it when uncertain, destroying emergency routing.
+
+3. **Too few epochs** — 2 epochs may not be enough to learn tool boundaries, but enough to corrupt the base model's existing knowledge.
+
+4. **System prompt mismatch** — the training system prompt may differ subtly from inference, causing the model to route differently.
+
+5. **LoRA rank too low** — r=16 may not have enough capacity to learn the tool discrimination task without forgetting base capabilities.
 
 ---
 
-## What's Broken (SLM)
+## Fixes
 
-1. **emergency_dispatch at 25%** — the most critical tool is the worst performing
-2. **triage_assessment over-predicted 4x** — model defaults to "front desk" tool
-3. **Latency 12.5s** — Unsloth on T4 without optimization
-4. **English and Hinglish equally bad** (60% each) — tool discrimination issue, not language
+### Immediate (Training)
 
----
-
-## Fixes for SLM
-
-### Training Data
-
-1. **Increase emergency samples** — 2-3x oversampling of emergency_dispatch cases
-2. **Hard-mine confusion pairs** — more examples distinguishing emergency from triage
-3. **Add negative examples** — "chest pain from anxiety" → mental_health_triage, not emergency
-
-### Training Config
-
-4. **Increase epochs** — 2 → 4-5 for better tool boundary learning
-5. **Increase LoRA rank** — r=16 → r=32 for more capacity
-6. **Lower learning rate** — 7e-5 → 3e-5 to prevent forgetting
+1. **Audit training data** — check emergency_dispatch samples for quality. Are the labels correct?
+2. **Increase epochs to 4-5** — more time to learn tool boundaries
+3. **Increase LoRA rank to 32** — more capacity
+4. **Lower learning rate to 3e-5** — prevent catastrophic forgetting
+5. **Oversample emergency_dispatch 2-3x** — counter the triage_assessment bias
 
 ### System Prompt
 
-7. **Add emergency rule** — "life-threatening symptoms → ALWAYS emergency_dispatch"
-8. **Tool priority order** — emergency > mental_health > vitals > specialist > medication > lab > triage
+6. **Add emergency rule** — "life-threatening symptoms → ALWAYS emergency_dispatch"
+7. **Tool priority order** — emergency > mental_health > vitals > specialist > medication > lab > triage
 
 ### Post-Processing
 
-9. **Rule-based safety net** — override triage_assessment to emergency_dispatch for critical keywords
+8. **Rule-based safety net** — if query contains "chest pain", "stroke", "suicidal", "cannot breathe" AND model picks triage_assessment, override to emergency_dispatch
 
-### Inference
+### Alternative Approaches
 
-10. **Lower temperature** — 0.1 → 0.01 for deterministic routing
+9. **Use base model with better system prompt** — the base model already gets 82.5%. A stronger system prompt might push it to 87%+.
+10. **Few-shot prompting** — instead of fine-tuning, use 3-5 examples in the system prompt
+11. **Distill from Mistral Large** — use Mistral Large's predictions as training labels instead of the generated dataset
 
 ---
 
@@ -166,13 +197,15 @@ The SLM gets urgency right 87.5% of the time, but picks the wrong tool.
 
 | # | Fix | Expected Impact | Effort |
 |:-:|-----|:---------------:|:------:|
-| 1 | Increase emergency training samples | +15-20% | Low |
-| 2 | Increase epochs to 4-5 | +5-10% | Low |
-| 3 | System prompt emergency rule | +10% | Trivial |
-| 4 | LoRA rank 16 → 32 | +5% | Low |
-| 5 | Rule-based safety net | +10% | Low |
-| 6 | Lower temperature to 0.01 | +2-3% | Trivial |
+| 1 | Audit + fix training data labels | +15-25% | Medium |
+| 2 | Use base model + stronger system prompt | +5% (to 87%) | Trivial |
+| 3 | Increase epochs to 4-5 | +5-10% | Low |
+| 4 | Increase LoRA rank to 32 | +5% | Low |
+| 5 | Lower learning rate to 3e-5 | +5% | Low |
+| 6 | Rule-based emergency safety net | +10% | Low |
+| 7 | Distill from Mistral Large | +10-15% | Medium |
 
-**Target: 80-85% tool accuracy after fixes.**
-
-**Latency:** Both Unsloth and GGUF are ~12.5s on T4. No significant speed difference observed. Latency is dominated by the 4B model inference, not the engine.
+**Realistic targets:**
+- Base model + better prompt: 85-87% (no training needed)
+- Fixed fine-tuning: 80-85% (after data audit + config changes)
+- Distillation from Mistral Large: 87-90% (best approach)
