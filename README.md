@@ -26,9 +26,70 @@
 
 ![Agent Pipeline](visuals/agent_pipeline.png)
 
-The SLM runs twice per query:
-1. **Tool Call** — reads tool definitions, selects tool, outputs JSON
-2. **Response** — reads tool result, synthesizes human-readable summary
+The SLM runs per query in a 5-step ReAct loop:
+1. **Input** — receive patient query
+2. **Thought/Action** — SLM reasons and outputs tool call JSON
+3. **Execution** — deterministic mock tool runs
+4. **Observation** — tool result captured
+5. **Final Answer** — structured summary with category, reasoning, tool, result
+
+---
+
+## Features
+
+### Inference Engines
+
+| Engine | Mode | Speed | Accuracy | Use Case |
+|--------|------|-------|----------|----------|
+| **Placeholder** | `--mode placeholder` | Instant | ~60% | Pipeline testing, CI |
+| **Mistral API** | `--mode mistral` | ~1.5s | 80-87% | Baseline comparison |
+| **Unsloth** | `--mode slm` | ~3-6s | Best | Full accuracy, GPU required |
+| **llama.cpp (GGUF)** | `--mode gguf` | ~1-3s | Good | Fast inference, any hardware |
+
+### Agent Loop
+
+- **5-step ReAct loop**: Input → Thought → Action → Observation → Final Answer
+- **Verbose mode**: `verbose=True` shows each step with reasoning, latency, tool call
+- **Hallucination recovery**: up to 3 retries with error context on parse failure
+- **Safety fallback**: if all retries fail, defaults to `emergency_dispatch` (over-triage)
+- **Deterministic tools**: 7 mock tools with fixed responses, all calls logged to CSV
+
+### Eval System
+
+- **Single-stage**: tool call accuracy only (fast)
+- **Full agent loop**: `--use-agent` for end-to-end measurement
+- **Metrics**: tool accuracy, category accuracy, parse rate, latency (avg/p50/p95), retry count, confusion matrix
+- **Per-breakdown**: per-tool, per-language (EN vs Hinglish), per-category
+- **Auto-download**: adapter downloads from Hub if not found locally
+
+### Interactive Testing
+
+```bash
+# Single query
+python -m src.test_engine --engine mistral --query "chest pain, 55yo male"
+
+# Interactive loop (type queries, 'quit' to exit)
+python -m src.test_engine --engine mistral
+```
+
+### Eval CLI
+
+```bash
+# Placeholder (no API)
+python -m src.eval --mode placeholder
+
+# Mistral baseline
+python -m src.eval --mode mistral --mistral-model mistral-large-latest
+
+# GGUF (fast)
+python -m src.eval --mode gguf --gguf-path ./model.gguf
+
+# Unsloth (best accuracy)
+python -m src.eval --mode slm --adapter-path fhai50032/latentsig-med-router-qwen3-4b
+
+# Full comparison
+python -m src.eval --mode full --adapter-path fhai50032/latentsig-med-router-qwen3-4b
+```
 
 ---
 
@@ -37,15 +98,18 @@ The SLM runs twice per query:
 ```
 latentsig-slm-router-med/
 │
-├── src/                              ← Agentic loop + inference
-│   ├── agent.py                      ← Phase 2: ReAct loop (placeholder engine)
-│   ├── agent_colab.py                ← Phase 2: Two-stage SLM loop (Colab)
-│   ├── config.py                     ← Model paths, hyperparams
-│   ├── inference.py                  ← SLMEngine (Unsloth) + PlaceholderEngine
+├── src/                              ← Core agent + inference
+│   ├── agent.py                      ← ReAct loop (5-step, verbose, retry, fallback)
+│   ├── agent_colab.py                ← Two-stage SLM loop (Colab)
+│   ├── config.py                     ← Model paths, hyperparams, constants
+│   ├── eval.py                       ← Eval: SLM vs baseline, metrics, report
+│   ├── inference.py                  ← Engines: Placeholder, Unsloth, Mistral, llama.cpp
 │   ├── parser.py                     ← JSON extraction + Pydantic validation
 │   ├── prompts.py                    ← System prompts (tool-call + assistant)
+│   ├── test_agent.py                 ← Smoke test (10 queries, placeholder)
+│   ├── test_engine.py                ← Interactive query tester (any engine)
 │   ├── tools.py                      ← 7 deterministic mock tools + CSV logging
-│   └── test_agent.py                 ← Smoke test (10 queries)
+│   └── verify.py                     ← Post-training sanity check (10 queries)
 │
 ├── synth-ds-framework/               ← Dataset generation pipeline
 │   ├── orchestrator_parallel.py      ← Parallel datagen (32 workers, 8 keys)
@@ -57,8 +121,10 @@ latentsig-slm-router-med/
 │   ├── monitor.py                    ← Flask dashboard (localhost:5000)
 │   ├── gen_eval.py                   ← Eval dataset generator
 │   ├── gen_visuals.py                ← Seaborn/matplotlib visualizations
-│   ├── gen_flowcharts.py             ← Flowchart image generator
-│   └── tool-schema/                  ← 91+ extended tool schemas (future)
+│   └── gen_flowcharts.py             ← Flowchart image generator
+│
+├── docs/
+│   └── setup.md                      ← Cell-by-cell Colab setup guide
 │
 ├── tool_logs/                        ← Per-tool CSV logs (generated at runtime)
 │   ├── triage_assessment.csv
@@ -69,6 +135,21 @@ latentsig-slm-router-med/
 │   ├── mental_health_triage.csv
 │   └── lab_order_suggestion.csv
 │
+├── visuals/                          ← Architecture + eval charts
+│   ├── architecture_overview.png
+│   ├── agent_pipeline.png
+│   ├── react_loop_flow.png
+│   ├── hallucination_recovery.png
+│   ├── verification_pipeline.png
+│   ├── generation_pipeline.png
+│   ├── eval_accuracy_comparison.png
+│   ├── eval_latency_comparison.png
+│   ├── eval_tool_heatmap.png
+│   └── eval_slm_distribution.png
+│
+├── eval_result.md                    ← Full eval results + fix plan
+├── gen_eval_charts.py                ← Eval chart generator
+├── setup.py                          ← Package setup (pip install -e)
 └── README.md                         ← This file
 ```
 
@@ -99,238 +180,6 @@ The SLM must select from 7 tools. Each tool has flat parameters (no nesting) for
   "args": { /* tool-specific parameters */ }
 }
 ```
-
----
-
-## Dataset
-
-**HF:** [fhai50032/latentsig-med-triage-router](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router)
-
-| Split | Samples | Languages |
-|-------|---------|-----------|
-| Train | 2,000 | 1,000 EN + 1,000 Hinglish |
-| Eval | 40 | 20 EN + 20 Hinglish |
-
-### Generation Pipeline
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  Tool Schema    │───▶│  Query Generator  │───▶│  Response Gen   │
-│  (7 tools)      │    │  (3 Mistral models)│   │  (with hint)    │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                                        │
-                                                        ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  Dataset JSONL  │◀───│  3-Layer Verify   │◀───│  Target Tool    │
-│  (2,000 rows)   │    │  (Pydantic+Fuzzy  │   │  Enforcement    │
-│                 │    │   +LLM Judge)     │   │                 │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
-
-**Key design:**
-- **Tool-balanced:** `pick_target_tool()` uses weighted random favoring least-used tools
-- **Target hint:** Response prompt includes `[Use the X tool]` for clean training data
-- **3-layer verification:** Pydantic structural → tool enforcement → LLM judge (unbiased)
-- **Hash dedup:** `sha256(user_query + verdict)` — no duplicate queries
-- **Parallel:** 32 workers, 8 Mistral API keys, ~0.7/s throughput
-
-### Generation Models
-
-| Model | Purpose | Share |
-|-------|---------|-------|
-| mistral-large-latest | Query + response generation | 23% |
-| mistral-medium-latest | Query + response generation | 50% |
-| magistral-medium-latest | Query + response generation | 27% |
-| mistral-small-latest | LLM judge (unbiased) | 100% |
-
----
-
-## Agentic Loop (Phase 2)
-
-### ReAct Loop Flow
-
-![ReAct Loop Flow](visuals/react_loop_flow.png)
-
-### Hallucination Recovery
-
-![Hallucination Recovery](visuals/hallucination_recovery.png)
-
-### Two-Stage Inference (agent_colab.py)
-
-```python
-# Stage 1: Tool Call
-raw, latency = engine.generate(TOOL_CALL_SYSTEM_PROMPT, query)
-tool_call = parse_tool_call(raw)  # JSON extraction + validation
-tool_result = execute_tool(tool_call["tool"], tool_call["args"])
-db.log(tool_call["tool"], tool_call["args"], tool_result)
-
-# Stage 2: Response
-context = f"Query: {query}\nDecision: {tool_call}\nResult: {tool_result}"
-response, latency = engine.generate(ASSISTANT_SYSTEM_PROMPT, context)
-```
-
-### Mock Tools (Deterministic)
-
-Each tool returns fixed data for the same input. All calls logged to CSV.
-
-```python
-# Example: emergency_dispatch
-def emergency_dispatch(args):
-    return {
-        "status": "dispatched",
-        "condition": args["condition"],
-        "transport": args["transport_type"],
-        "eta_minutes": 8,
-        "dispatch_id": f"EMD-{hash(str(args)) % 10**8:08d}"
-    }
-```
-
-**Log output:** `tool_logs/emergency_dispatch.csv`
-```
-call_id,tool,args,result,timestamp
-EMD-59F761B4,emergency_dispatch,{...},{...},2026-05-29T18:57:01
-```
-
----
-
-## Fine-Tuning
-
-**Model:** Qwen3-4B-Instruct | **Method:** QLoRA 4-bit | **Hardware:** Colab T4 (16GB)
-
-### Training Config
-
-```python
-SFTConfig(
-    dataset_text_field="text",
-    per_device_train_batch_size=16,
-    gradient_accumulation_steps=1,
-    num_train_epochs=2,
-    learning_rate=7e-5,
-    optim="adamw_8bit",
-    fp16=True,
-    eval_strategy="steps",
-    eval_steps=25,
-    save_strategy="steps",
-    save_steps=50,
-    logging_steps=1,
-    report_to="wandb",
-)
-```
-
-### LoRA Config
-
-```python
-FastLanguageModel.get_peft_model(
-    model,
-    r=16,
-    target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                     "gate_proj", "up_proj", "down_proj"],
-    lora_alpha=32,
-    lora_dropout=0,
-    use_gradient_checkpointing="unsloth",
-)
-```
-
-### Dataset Format (Qwen3 Chat Template)
-
-```python
-def format_to_text(row):
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": row["user_query"]},
-        {"role": "assistant", "content": row["response"]},
-    ]
-    return {"text": tokenizer.apply_chat_template(messages, tokenize=False)}
-
-ds = ds.map(format_to_text, remove_columns=ds.column_names)
-```
-
----
-
-## Verification Pipeline
-
-Every sample passes 3 layers before inclusion:
-
-![Verification Pipeline](visuals/verification_pipeline.png)
-
-**Critical:** The LLM judge does NOT know which tool was targeted. It evaluates tool selection purely on medical merit.
-
----
-
-## Monitoring
-
-**Dashboard:** `python synth-ds-framework/monitor.py` → http://localhost:5000
-
-- Live progress bars (EN / HI_EN vs target)
-- Stats cards: total, passed, failed, rate, ETA
-- Category / tool / model breakdowns
-- Recent samples table
-- Dataset viewer at /viewer (sortable, filterable)
-
----
-
-## Quick Start
-
-### 1. Generate Dataset (already done)
-
-```bash
-cd synth-ds-framework
-python orchestrator_parallel.py --en 1000 --hi-en 1000 --workers 32
-```
-
-### 2. Fine-Tune (Colab)
-
-```python
-# Load model
-from unsloth import FastLanguageModel
-model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name="unsloth/Qwen3-4B-Instruct",
-    max_seq_length=1280, load_in_4bit=True,
-)
-
-# Load dataset
-from datasets import load_dataset
-ds = load_dataset("fhai50032/latentsig-med-triage-router", split="train")
-eval_ds = load_dataset("fhai50032/latentsig-med-triage-router", split="eval")
-
-# Format + train (see finetune.md for full config)
-```
-
-### 3. Run Agent
-
-```python
-from src.agent_colab import SLMEngine, TriageAgent, ToolDB
-
-engine = SLMEngine(adapter_path="fhai50032/latentsig-med-router-qwen3-4b")
-engine.load()
-
-agent = TriageAgent(engine)
-
-# Verbose: shows full ReAct loop (tool call, execution, response)
-result = agent.run("68-year-old male, sudden facial droop, cannot speak", verbose=True)
-
-# Silent: only returns result object
-result = agent.run("chest pain, 55yo male", verbose=False)
-
-print(result.response)          # Human-readable answer
-print(result.tool_call)         # JSON tool call
-print(result.tool_result)       # Deterministic tool output
-print(result.total_latency_ms)  # End-to-end latency
-```
-
----
-
-## Evaluation
-
-Full eval results, comparison charts, confusion matrices, and fix plan: **[eval_result.md](eval_result.md)**
-
-| Model | Tool Accuracy | Category Accuracy | Avg Latency |
-|-------|:------------:|:----------------:|:-----------:|
-| Mistral Small (baseline) | 80.0% | 90.0% | 1,464ms |
-| Mistral Large (baseline) | 87.5% | 90.0% | 3,097ms |
-| **SLM (ours)** | **60.0%** | **87.5%** | 12,559ms |
-
-Primary issue: `emergency_dispatch` at 25% (model defaults to `triage_assessment`). See [eval_result.md](eval_result.md) for fix plan.
 
 ---
 
