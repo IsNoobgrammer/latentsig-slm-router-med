@@ -237,26 +237,34 @@ class TriageAgent:
 
     def _synthesize_answer(self, query: str, decision: dict | None,
                            observation: dict | None, is_fallback: bool) -> tuple[str, float]:
-        """Synthesize final answer via SLM (Stage 2).
+        """Synthesize human-readable final answer (heuristic).
 
-        Returns (answer_text, latency_seconds).
+        Returns (answer_text, 0.0) — no SLM call, instant.
         """
         if not decision:
             return "ERROR: Could not process the query. Please try again.", 0.0
 
-        # Build context for the assistant SLM
-        context = f"""Patient query: {query}
+        cat = decision.get("category", "unknown")
+        dept = decision.get("department", "unknown")
+        tool = decision.get("tool", "unknown")
+        reasoning = decision.get("reasoning", "")
 
-Triage decision:
-{json.dumps(decision, indent=2)}
+        lines = []
+        if is_fallback:
+            lines.append("FALLBACK: System could not process the input correctly.")
+            lines.append("Over-triage safety rule applied.")
+            lines.append("")
 
-Tool result:
-{json.dumps(observation, indent=2) if observation else "No result"}
+        urgency_label = {"emergency": "EMERGENCY", "urgent": "URGENT",
+                         "semi_urgent": "SEMI-URGENT", "routine": "ROUTINE"}
+        lines.append(f"[{urgency_label.get(cat, cat).upper()}] Department: {dept}")
+        lines.append(f"Reasoning: {reasoning}")
+        lines.append(f"Tool: {tool}")
 
-Please provide a clear, professional triage summary to the user."""
+        if observation:
+            lines.append(f"Result: {json.dumps(observation, indent=2)}")
 
-        answer, latency = self.engine.generate(ASSISTANT_SYSTEM_PROMPT, context, max_tokens=500)
-        return answer, latency
+        return "\n".join(lines), 0.0
 
 
 # ── Convenience Function ─────────────────────────────────────
