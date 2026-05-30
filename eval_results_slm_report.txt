@@ -1,0 +1,51 @@
+========================================================================
+  LatentSig Medical Triage Router — Eval Report
+========================================================================
+
+Metric                                         slm
+──────────────────────────────────────────────────
+Tool Accuracy                                60.0%
+Category Accuracy                            87.5%
+Parse Success Rate                          100.0%
+Fallback Rate                                 0.0%
+──────────────────────────────────────────────────
+Avg Latency (ms)                             12559
+P50 Latency (ms)                             12216
+P95 Latency (ms)                             17858
+──────────────────────────────────────────────────
+Avg Retries                                   0.00
+Total Retries                                    0
+──────────────────────────────────────────────────
+Total Samples                                   40
+
+────────────────────────────────────────────────────────────────────────
+  slm — Per-Tool Accuracy
+────────────────────────────────────────────────────────────────────────
+  Tool                          Correct    Total      Acc
+  ──────────────────────────── ──────── ──────── ────────
+  emergency_dispatch                  4       16   25.0%
+  lab_order_suggestion                2        2  100.0%
+  medication_check                    6        6  100.0%
+  mental_health_triage                5        5  100.0%
+  specialist_referral                 3        5   60.0%
+  triage_assessment                   1        3   33.3%
+  vital_signs_analysis                3        3  100.0%
+
+────────────────────────────────────────────────────────────────────────
+  slm — Per-Language Accuracy
+────────────────────────────────────────────────────────────────────────
+  Language      Correct    Total      Acc
+  ──────────── ──────── ──────── ────────
+  English            12       20   60.0%
+  Hinglish           12       20   60.0%
+
+────────────────────────────────────────────────────────────────────────
+  slm — Top Confusions (predicted → actual)
+────────────────────────────────────────────────────────────────────────
+    triage_assessment            → emergency_dispatch           (11x)
+    lab_order_suggestion         → specialist_referral          (2x)
+    vital_signs_analysis         → triage_assessment            (1x)
+    vital_signs_analysis         → emergency_dispatch           (1x)
+    lab_order_suggestion         → triage_assessment            (1x)
+
+========================================================================

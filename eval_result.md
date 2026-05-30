@@ -2,9 +2,17 @@
 
 40 eval samples (20 English + 20 Hinglish). Held-out, never seen during training.
 
+**Colab Notebooks:**
+- [Training](https://colab.research.google.com/drive/1fakehai/training-latentsig-slm-router)
+- [Agent Inference](https://colab.research.google.com/drive/1fakehai/latentsig-slm-router-agent)
+
+**W&B Report:** [LatentSig SLM Router](https://wandb.ai/ablations-tinycompany-ai/latentsig-med-triage-router/reports/LatentSig-SLM-Router--VmlldzoxNzA2MzQ3OA)
+
 ---
 
 ## Summary
+
+![Accuracy Comparison](visuals/eval_accuracy_comparison.png)
 
 | Metric | Mistral Small | Mistral Large | SLM (Ours) |
 |--------|:------------:|:------------:|:----------:|
@@ -19,7 +27,17 @@
 
 ---
 
+## Latency
+
+![Latency Comparison](visuals/eval_latency_comparison.png)
+
+SLM latency is 12.5s (PyTorch on T4, no optimization). Mistral API is 1.5s. GGUF would be ~2-3s.
+
+---
+
 ## Per-Tool Accuracy
+
+![Tool Heatmap](visuals/eval_tool_heatmap.png)
 
 | Tool | GT Count | Mistral Small | Mistral Large | SLM (Ours) |
 |------|:--------:|:------------:|:------------:|:----------:|
@@ -30,6 +48,14 @@
 | `vital_signs_analysis` | 3 | 100.0% | 100.0% | 100.0% |
 | `triage_assessment` | 3 | 33.3% | 33.3% | 33.3% |
 | `lab_order_suggestion` | 2 | 50.0% | 50.0% | 100.0% |
+
+---
+
+## SLM: The Imbalance Problem
+
+![SLM Distribution](visuals/eval_slm_distribution.png)
+
+The SLM predicts `triage_assessment` 12 times (should be 3). It predicts `emergency_dispatch` only 4 times (should be 16). The model defaults to the "front desk" tool instead of calling the ambulance.
 
 ---
 
@@ -51,39 +77,23 @@
 | semi_urgent | 1 | 2 | 50.0% |
 | routine | 0 | 2 | 0.0% |
 
-**Key insight:** The SLM gets the urgency right 87.5% of the time, but picks the wrong tool within that urgency level.
+The SLM gets urgency right 87.5% of the time, but picks the wrong tool.
 
 ---
 
-## SLM Prediction Distribution
+## Confusion Matrices
 
-| Tool | Ground Truth | SLM Predictions | Bias |
-|------|:----------:|:---------------:|:----:|
-| `emergency_dispatch` | 16 | 4 | **-12 (severely under-predicted)** |
-| `triage_assessment` | 3 | 12 | **+9 (severely over-predicted)** |
-| `medication_check` | 6 | 6 | 0 |
-| `mental_health_triage` | 5 | 5 | 0 |
-| `vital_signs_analysis` | 3 | 5 | +2 |
-| `lab_order_suggestion` | 2 | 5 | +3 |
-| `specialist_referral` | 5 | 3 | -2 |
+### SLM (Ours) — 16 errors
 
----
+| Predicted → Actual | Count |
+|:-------------------|:-----:|
+| `triage_assessment` → `emergency_dispatch` | **11** |
+| `lab_order_suggestion` → `specialist_referral` | 2 |
+| `vital_signs_analysis` → `triage_assessment` | 1 |
+| `vital_signs_analysis` → `emergency_dispatch` | 1 |
+| `lab_order_suggestion` → `triage_assessment` | 1 |
 
-## Confusion Matrix — SLM (Ours)
-
-| Predicted → Actual | Count | Pattern |
-|:-------------------|:-----:|:--------|
-| `triage_assessment` → `emergency_dispatch` | 11 | **Primary failure** |
-| `lab_order_suggestion` → `specialist_referral` | 2 | Secondary |
-| `vital_signs_analysis` → `triage_assessment` | 1 | |
-| `vital_signs_analysis` → `emergency_dispatch` | 1 | |
-| `lab_order_suggestion` → `triage_assessment` | 1 | |
-
-**The SLM defaults to `triage_assessment` for emergency cases instead of `emergency_dispatch`.**
-
----
-
-## Confusion Matrix — Mistral Small
+### Mistral Small — 8 errors
 
 | Predicted → Actual | Count |
 |:-------------------|:-----:|
@@ -93,9 +103,7 @@
 | `triage_assessment` → `lab_order_suggestion` | 1 |
 | `emergency_dispatch` → `triage_assessment` | 1 |
 
----
-
-## Confusion Matrix — Mistral Large
+### Mistral Large — 5 errors
 
 | Predicted → Actual | Count |
 |:-------------------|:-----:|
@@ -107,25 +115,10 @@
 
 ---
 
-## SLM Error Analysis
-
-### 12 out of 16 emergency_dispatch cases misclassified as triage_assessment
-
-The SLM has a systematic bias: when it sees chest pain, stroke, or other emergency symptoms, it routes to `triage_assessment` (initial triage) instead of `emergency_dispatch` (call ambulance).
-
-**Examples:**
-- "52yo male, sudden onset severe chest pain radiating to left arm" → SLM: `triage_assessment` (should be `emergency_dispatch`)
-- "58yo male, crushing chest pain, sweating, nausea" → SLM: `triage_assessment` (should be `emergency_dispatch`)
-- "45yo male, sudden facial droop, cannot speak" → SLM: `triage_assessment` (should be `emergency_dispatch`)
-
-**Root cause:** The training data likely has `triage_assessment` as the most common tool, so the model defaults to it for ambiguous cases. Emergency cases need stronger signal.
-
----
-
 ## What's Working (SLM)
 
 - **100% accuracy** on: `medication_check`, `mental_health_triage`, `vital_signs_analysis`, `lab_order_suggestion`
-- **Category accuracy 87.5%** — knows the urgency level even when picking wrong tool
+- **Category accuracy 87.5%** — knows urgency level even when picking wrong tool
 - **Parse success 100%** — always outputs valid JSON
 - **Zero fallbacks** — never needs safety override
 
@@ -135,8 +128,8 @@ The SLM has a systematic bias: when it sees chest pain, stroke, or other emergen
 
 1. **emergency_dispatch at 25%** — the most critical tool is the worst performing
 2. **triage_assessment over-predicted 4x** — model defaults to "front desk" tool
-3. **Latency 12.5s** — Unsloth on T4 without optimization (Mistral API is 1.5s)
-4. **English and Hinglish equally bad** (60% each) — not a language issue, it's a tool discrimination issue
+3. **Latency 12.5s** — Unsloth on T4 without optimization
+4. **English and Hinglish equally bad** (60% each) — tool discrimination issue, not language
 
 ---
 
@@ -144,46 +137,41 @@ The SLM has a systematic bias: when it sees chest pain, stroke, or other emergen
 
 ### Training Data
 
-1. **Increase emergency samples** — current dataset may be tool-balanced but emergency cases need more diversity (chest pain, stroke, anaphylaxis, trauma, overdose, etc.)
-2. **Hard-mine confusion pairs** — generate more examples where the difference between `emergency_dispatch` and `triage_assessment` is subtle
-3. **Oversample emergency_dispatch** — weight emergency samples 2-3x during training
-4. **Add negative examples** — queries that look like emergencies but are actually routine (e.g. "chest pain from anxiety attack" → `mental_health_triage`, not `emergency_dispatch`)
+1. **Increase emergency samples** — 2-3x oversampling of emergency_dispatch cases
+2. **Hard-mine confusion pairs** — more examples distinguishing emergency from triage
+3. **Add negative examples** — "chest pain from anxiety" → mental_health_triage, not emergency
 
 ### Training Config
 
-5. **Increase epochs** — 2 epochs may be insufficient for the model to learn tool discrimination. Try 4-5 epochs.
-6. **Increase LoRA rank** — r=16 → r=32 or r=64 for more capacity to learn tool boundaries
-7. **Lower learning rate** — 7e-5 → 3e-5 to prevent catastrophic forgetting of emergency patterns
-8. **Class-weighted loss** — weight `emergency_dispatch` samples higher in the loss function
+4. **Increase epochs** — 2 → 4-5 for better tool boundary learning
+5. **Increase LoRA rank** — r=16 → r=32 for more capacity
+6. **Lower learning rate** — 7e-5 → 3e-5 to prevent forgetting
 
 ### System Prompt
 
-9. **Strengthen emergency rules** — add explicit rule: "If symptoms describe a life-threatening condition (chest pain, stroke, anaphylaxis, severe bleeding, suicidal ideation with plan), ALWAYS use emergency_dispatch, NOT triage_assessment"
-10. **Add tool priority order** — emergency_dispatch > mental_health_triage > vital_signs_analysis > specialist_referral > medication_check > lab_order_suggestion > triage_assessment
+7. **Add emergency rule** — "life-threatening symptoms → ALWAYS emergency_dispatch"
+8. **Tool priority order** — emergency > mental_health > vitals > specialist > medication > lab > triage
 
 ### Post-Processing
 
-11. **Rule-based safety net** — if the query contains "chest pain", "stroke", "cannot breathe", "suicidal", "severe bleeding", and the model picks `triage_assessment`, override to `emergency_dispatch`
-12. **Confidence threshold** — if the model's reasoning mentions "emergency" or "life-threatening" but picks `triage_assessment`, flag for review
+9. **Rule-based safety net** — override triage_assessment to emergency_dispatch for critical keywords
 
 ### Inference
 
-13. **Lower temperature** — 0.1 → 0.01 for more deterministic routing
-14. **Use Unsloth GGUF** — switch from PyTorch to GGUF for 3-5x latency improvement (12.5s → 3-4s)
-15. **KV cache system prompt** — pre-compute system prompt tokens to save ~500 tokens per query
+10. **GGUF for speed** — 12.5s → 2-3s latency
+11. **Lower temperature** — 0.1 → 0.01 for deterministic routing
 
 ---
 
-## Priority Fixes (Impact × Effort)
+## Priority Fixes
 
-| Priority | Fix | Expected Impact | Effort |
-|:--------:|-----|:---------------:|:------:|
-| 1 | Increase emergency training samples (2-3x) | +15-20% tool accuracy | Low |
-| 2 | Increase epochs to 4-5 | +5-10% tool accuracy | Low |
-| 3 | Add system prompt emergency rule | +10% on emergency_dispatch | Trivial |
-| 4 | Increase LoRA rank to 32 | +5% tool accuracy | Low |
-| 5 | Rule-based safety net for emergencies | +10% on emergency_dispatch | Low |
-| 6 | Hard-mine confusion pairs | +5% tool accuracy | Medium |
-| 7 | GGUF for inference | 3-4x latency improvement | Low |
+| # | Fix | Expected Impact | Effort |
+|:-:|-----|:---------------:|:------:|
+| 1 | Increase emergency training samples | +15-20% | Low |
+| 2 | Increase epochs to 4-5 | +5-10% | Low |
+| 3 | System prompt emergency rule | +10% | Trivial |
+| 4 | LoRA rank 16 → 32 | +5% | Low |
+| 5 | Rule-based safety net | +10% | Low |
+| 6 | GGUF inference | 3-4x faster | Low |
 
-**Realistic target after fixes: 80-85% tool accuracy, matching Mistral Small.**
+**Target: 80-85% tool accuracy after fixes.**
