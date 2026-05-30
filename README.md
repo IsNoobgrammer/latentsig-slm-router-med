@@ -311,6 +311,57 @@ print(result.total_latency_ms)  # End-to-end latency
 
 ---
 
+## Eval — SLM vs Baseline
+
+The eval system compares the fine-tuned SLM against a Mistral API baseline using the same system prompt. Both are measured on the held-out eval set (40 samples: 20 EN + 20 Hinglish).
+
+![Eval Pipeline](visuals/eval_pipeline.png)
+
+### Quick Test (no model needed)
+
+```bash
+python -m src.eval --mode placeholder --limit 5
+```
+
+### Mistral Baseline Only
+
+```bash
+python -m src.eval --mode mistral --eval-file synth-ds-framework/eval_dataset.jsonl
+```
+
+### Full Comparison (Colab — GPU + adapter needed)
+
+```bash
+python -m src.eval --mode full \
+    --adapter-path fhai50032/latentsig-med-router-qwen3-4b \
+    --eval-file synth-ds-framework/eval_dataset.jsonl \
+    --output eval_results_full.jsonl
+```
+
+### Metrics
+
+| Metric | What it measures |
+|--------|-----------------|
+| **Tool Accuracy** | Exact match: predicted tool == ground truth tool |
+| **Category Accuracy** | Emergency/urgent/semi_urgent/routine match |
+| **Parse Success Rate** | % of outputs that are valid JSON with all fields |
+| **Fallback Rate** | % that hit safety fallback (all retries exhausted) |
+| **Avg / P50 / P95 Latency** | Inference latency per query |
+| **Avg Retries** | Hallucination recovery attempts per sample |
+| **Per-Tool Breakdown** | Accuracy for each of the 7 tools |
+| **Per-Language Breakdown** | EN vs Hinglish accuracy |
+| **Confusion Matrix** | Which tools get confused for which |
+
+### Agent Mode (end-to-end)
+
+```bash
+python -m src.eval --mode full --use-agent
+```
+
+With `--use-agent`, the full two-stage loop runs (tool call → execute → respond), measuring retry count and fallback rate accurately.
+
+---
+
 ## Key Design Decisions
 
 | Decision | Choice | Rationale |
