@@ -120,6 +120,69 @@ class UnslothEngine:
         return response, latency
 
 
+# ── Mistral API Engine (baseline) ────────────────────────────
+
+class MistralAPIEngine:
+    """Mistral API engine for baseline comparison.
+
+    Uses the same system prompt as the SLM but calls Mistral's API.
+    Supports key rotation across multiple keys.
+    """
+
+    def __init__(self, api_keys: list[str], model: str = "mistral-small-latest",
+                 temperature: float = 0.1, max_tokens: int = 300):
+        import os
+        self.api_keys = api_keys
+        self.model = model
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self._key_idx = 0
+        self.call_count = 0
+
+    def _next_key(self) -> str:
+        key = self.api_keys[self._key_idx % len(self.api_keys)]
+        self._key_idx += 1
+        return key
+
+    def generate(self, system_prompt: str, user_prompt: str) -> tuple[str, float]:
+        """Call Mistral API. Returns (response_text, latency_seconds)."""
+        import json
+        import urllib.request
+        import time as _time
+
+        key = self._next_key()
+        body = json.dumps({
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "response_format": {"type": "json_object"},
+        }).encode()
+
+        req = urllib.request.Request(
+            "https://api.mistral.ai/v1/chat/completions",
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {key}",
+            },
+        )
+
+        start = _time.time()
+        try:
+            resp = urllib.request.urlopen(req, timeout=30)
+            latency = _time.time() - start
+            data = json.loads(resp.read())
+            self.call_count += 1
+            return data["choices"][0]["message"]["content"], latency
+        except Exception as e:
+            latency = _time.time() - start
+            return json.dumps({"error": str(e)}), latency
+
+
 # ── Factory ──────────────────────────────────────────────────
 
 def create_engine(mode: str = "placeholder", **kwargs) -> InferenceEngine:
@@ -135,5 +198,7 @@ def create_engine(mode: str = "placeholder", **kwargs) -> InferenceEngine:
         engine = UnslothEngine(**kwargs)
         engine.load()
         return engine
+    elif mode == "mistral":
+        return MistralAPIEngine(**kwargs)
     else:
-        raise ValueError(f"Unknown engine mode: {mode}")
+        raise ValueError(f"Unknown engine mode: {mode}. Use 'placeholder', 'unsloth', or 'mistral'.")
