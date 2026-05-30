@@ -503,7 +503,16 @@ def run_eval(
         if use_agent:
             agent = TriageAgent(engine, max_retries=max_retries, verbose=False)
 
+        t_start = time.time()
+        running_correct = 0
+
         for i, sample in enumerate(samples):
+            # Show what we're about to process (appears before API call)
+            query_preview = sample.query[:70].replace('\n', ' ')
+            lang_tag = "EN" if sample.language == "en" else "HI"
+            sys.stdout.write(f"  [{i+1:3d}/{len(samples)}] ({lang_tag}) {query_preview}...")
+            sys.stdout.flush()
+
             if use_agent:
                 result = eval_sample_with_agent(agent, sample, engine_name)
             else:
@@ -512,13 +521,21 @@ def run_eval(
             results.append(result)
             metrics.add(result)
 
-            # Progress
+            # Result line (overwrites the processing line)
             status = "✓" if result.tool_correct else "✗"
             fallback = " [FALLBACK]" if result.is_fallback else ""
             retries = f" r={result.retry_count}" if result.retry_count > 0 else ""
-            print(f"  [{i+1:3d}/{len(samples)}] {status} "
+            if result.tool_correct:
+                running_correct += 1
+            running_acc = running_correct / (i + 1) * 100
+
+            print(f"\r  [{i+1:3d}/{len(samples)}] {status} "
                   f"tool={result.pred_tool:<28} gt={sample.gt_tool:<28} "
-                  f"lat={result.latency_ms:.0f}ms{retries}{fallback}")
+                  f"lat={result.latency_ms:.0f}ms{retries}{fallback}  "
+                  f"acc={running_acc:.0f}%")
+
+        elapsed = time.time() - t_start
+        print(f"\n  Done in {elapsed:.1f}s ({elapsed/len(samples):.2f}s/sample)")
 
         all_metrics.append(metrics)
         all_results.extend(results)
