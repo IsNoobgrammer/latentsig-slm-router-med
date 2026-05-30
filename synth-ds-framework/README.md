@@ -1,27 +1,30 @@
 ---
+language:
+- en
+- hi
+license: mit
+size_categories:
+- 1K<n<10K
+task_categories:
+- text-generation
+- question-answering
+pretty_name: LatentSig Medical Triage Router Dataset
 configs:
 - config_name: default
   data_files:
   - split: train
     path: data/train-*
-language:
-  - en
-  - hi
-task_categories:
-  - text-generation
-  - question-answering
+  - split: eval
+    path: data/eval-*
 tags:
-  - medical
-  - triage
-  - tool-calling
-  - structured-output
-  - hinglish
-  - slm
-  - fine-tuning
-license: mit
-pretty_name: LatentSig Medical Triage Router Dataset
-size_categories:
-  - 1K<n<10K
+- medical
+- triage
+- tool-calling
+- structured-output
+- hinglish
+- slm
+- fine-tuning
+
 ---
 
 # LatentSig Medical Triage Router Dataset
