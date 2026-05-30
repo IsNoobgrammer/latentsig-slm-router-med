@@ -4,90 +4,103 @@ Inference and evaluation only. Training is done.
 
 ---
 
-## Colab — Quick Start
+## Colab — GGUF Inference (Fastest)
 
 ### Cell 1: Install
 
 ```python
-# Pre-built CUDA 12 wheel (direct URL — guaranteed GPU support)
-!pip install "https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.23-cu125/llama_cpp_python-0.3.23-py3-none-linux_x86_64.whl" --no-cache-dir --force-reinstall
+!pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu128 --no-cache-dir --force-reinstall
 !git clone https://github.com/IsNoobgrammer/latentsig-slm-router-med.git -q
 !pip install -e latentsig-slm-router-med -q
 %cd latentsig-slm-router-med
 ```
 
-### Cell 2: Download GGUF
+### Cell 2: Download + Load
 
 ```python
 from huggingface_hub import hf_hub_download
+from src.inference import LlamaCppEngine
+from src.prompts import SYSTEM_PROMPT
 
 gguf_path = hf_hub_download(
     repo_id="fhai50032/latentsig-med-router-qwen3-4b-gguf",
     filename="qwen3-4b-instruct-2507.Q5_K_M.gguf",
 )
-print(f"Model: {gguf_path}")
-```
-
-### Cell 3: Load + Test
-
-```python
-from src.inference import LlamaCppEngine
-from src.prompts import SYSTEM_PROMPT
 
 engine = LlamaCppEngine(model_path=gguf_path)
 engine.load()
-
-response, latency = engine.generate(
-    SYSTEM_PROMPT,
-    "68-year-old male, sudden facial droop, cannot speak, right arm weakness.",
-)
-print(f"Latency: {latency:.2f}s")
-print(response)
 ```
 
-### Cell 4: Run Eval
+### Cell 3: Test
+
+```python
+response, latency = engine.generate(SYSTEM_PROMPT, "chest pain, 55yo male")
+print(f"{latency:.2f}s\n{response}")
+```
+
+### Cell 4: Eval (batched, 8 parallel)
 
 ```python
 !python -m src.eval --mode gguf --gguf-path {gguf_path}
 ```
 
-### Cell 5: Interactive Test
+---
+
+## Colab — Unsloth Inference (Best Accuracy)
+
+Higher accuracy than GGUF. Auto-downloads adapter from Hub.
+
+### Cell 1: Install
 
 ```python
-!python -m src.test_engine --engine gguf --gguf-path {gguf_path} --query "chest pain, 55yo male"
+!pip install unsloth datasets -q
+!git clone https://github.com/IsNoobgrammer/latentsig-slm-router-med.git -q
+!pip install -e latentsig-slm-router-med -q
+%cd latentsig-slm-router-med
 ```
 
-### Cell 6: Compare vs Mistral Baseline
+### Cell 2: Load (auto-downloads adapter)
 
 ```python
-!python -m src.eval --mode full --gguf-path {gguf_path} --mistral-model mistral-small-latest
+from src.inference import UnslothEngine
+from src.prompts import SYSTEM_PROMPT
+
+engine = UnslothEngine(
+    base_model="unsloth/Qwen3-4B-Instruct",
+    adapter_path="fhai50032/latentsig-med-router-qwen3-4b",
+)
+engine.load()
+```
+
+### Cell 3: Test
+
+```python
+response, latency = engine.generate(SYSTEM_PROMPT, "chest pain, 55yo male")
+print(f"{latency:.2f}s\n{response}")
+```
+
+### Cell 4: Eval (batched, 4 parallel)
+
+```python
+!python -m src.eval --mode slm --adapter-path fhai50032/latentsig-med-router-qwen3-4b
+```
+
+### Cell 5: Compare vs Mistral
+
+```python
+!python -m src.eval --mode full --adapter-path fhai50032/latentsig-med-router-qwen3-4b
 ```
 
 ---
 
-## Local — llama.cpp (Fastest)
-
-### Install
+## Local — llama.cpp
 
 ```bash
-# macOS
-brew install llama.cpp
+# Install
+brew install llama.cpp           # macOS
+winget install llama.cpp         # Windows
 
-# Windows
-winget install llama.cpp
-
-# Or build from source
-git clone https://github.com/ggml-org/llama.cpp.git
-cd llama.cpp && cmake -B build && cmake --build build -j
-```
-
-### Run Inference
-
-```bash
-# Download + run (auto-downloads from Hub)
-llama-cli -hf fhai50032/latentsig-med-router-qwen3-4b-gguf:Q5_K_M
-
-# OpenAI-compatible server
+# Run
 llama-server -hf fhai50032/latentsig-med-router-qwen3-4b-gguf:Q5_K_M
 ```
 
@@ -102,14 +115,13 @@ curl http://localhost:8080/v1/chat/completions \
       {"role": "user", "content": "68yo male, sudden facial droop, cannot speak."}
     ],
     "response_format": {"type": "json_object"},
-    "max_tokens": 256,
-    "temperature": 0.1
+    "max_tokens": 256
   }'
 ```
 
 ---
 
-## Python — llama-cpp-python
+## Local — Python
 
 ```python
 from llama_cpp import Llama
@@ -117,36 +129,25 @@ from llama_cpp import Llama
 llm = Llama.from_pretrained(
     repo_id="fhai50032/latentsig-med-router-qwen3-4b-gguf",
     filename="qwen3-4b-instruct-2507.Q5_K_M.gguf",
-    n_ctx=2048,
-    n_gpu_layers=-1,  # offload all to GPU
+    n_gpu_layers=-1,
 )
 
 output = llm.create_chat_completion(
     messages=[
-        {"role": "system", "content": "You are LatentSig Medical Triage Router. Given a patient symptom description, output ONLY a valid JSON tool call."},
-        {"role": "user", "content": "Crushing chest pain radiating to left arm, sweating, 55yo male."},
+        {"role": "system", "content": "You are LatentSig Medical Triage Router. Output ONLY valid JSON."},
+        {"role": "user", "content": "chest pain, 55yo male"},
     ],
     response_format={"type": "json_object"},
-    max_tokens=256,
-    temperature=0.1,
 )
-
 print(output["choices"][0]["message"]["content"])
 ```
 
 ---
 
-## Ollama
+## Ollama / Docker
 
 ```bash
 ollama run hf.co/fhai50032/latentsig-med-router-qwen3-4b-gguf:Q5_K_M
-```
-
----
-
-## Docker
-
-```bash
 docker model run hf.co/fhai50032/latentsig-med-router-qwen3-4b-gguf:Q5_K_M
 ```
 
@@ -154,48 +155,55 @@ docker model run hf.co/fhai50032/latentsig-med-router-qwen3-4b-gguf:Q5_K_M
 
 ## Model Files
 
-| File | Size | Speed | Quality |
-|------|------|-------|---------|
-| `qwen3-4b-instruct-2507.Q5_K_M.gguf` | 2.89 GB | Fast | Good |
-| `qwen3-4b-instruct-2507.Q8_0.gguf` | 4.28 GB | Medium | Best |
+| File | Size | Engine | Speed | Accuracy |
+|------|------|--------|-------|----------|
+| `Q5_K_M.gguf` | 2.89 GB | llama.cpp | ~1-3s | Good |
+| `Q8_0.gguf` | 4.28 GB | llama.cpp | ~2-4s | Better |
+| Unsloth adapter | ~500MB | PyTorch | ~3-6s | Best |
 
-Hub: https://huggingface.co/fhai50032/latentsig-med-router-qwen3-4b-gguf
+Hub GGUF: https://huggingface.co/fhai50032/latentsig-med-router-qwen3-4b-gguf  
+Hub Adapter: https://huggingface.co/fhai50032/latentsig-med-router-qwen3-4b
 
 ---
 
 ## Eval Reference
 
 ```bash
-# Placeholder (pipeline test, no API)
-python -m src.eval --mode placeholder
-
-# Mistral baseline only
-python -m src.eval --mode mistral
-
-# GGUF (our fine-tuned model)
+# GGUF (fast, batched 8x)
 python -m src.eval --mode gguf --gguf-path ./model.gguf
 
-# Full comparison (GGUF vs Mistral)
+# Unsloth (best accuracy, batched 4x)
+python -m src.eval --mode slm --adapter-path fhai50032/latentsig-med-router-qwen3-4b
+
+# Mistral baseline
+python -m src.eval --mode mistral
+
+# Full comparison (auto GGUF if --gguf-path, else Unsloth)
+python -m src.eval --mode full --adapter-path fhai50032/latentsig-med-router-qwen3-4b
 python -m src.eval --mode full --gguf-path ./model.gguf
 
-# Full agent loop (end-to-end, slower)
-python -m src.eval --mode gguf --gguf-path ./model.gguf --use-agent
+# Custom batch size
+python -m src.eval --mode slm --adapter-path ... --batch-size 2
 
-# Limit samples (quick test)
+# Quick test
 python -m src.eval --mode gguf --gguf-path ./model.gguf --limit 10
+
+# Interactive
+python -m src.test_engine --engine gguf --gguf-path ./model.gguf --query "chest pain"
+python -m src.test_engine --engine slm --query "chest pain"
 ```
 
 ---
 
 ## Troubleshooting
 
-**llama-cpp-python install fails with CUDA:**
+**OOM with Unsloth batch:** Lower batch size `--batch-size 2` or `--batch-size 1`
+
+**llama-cpp-python CPU only:** Use direct wheel URL:
 ```bash
-CMAKE_ARGS="-DLLAMA_CUBLAS=on" pip install llama-cpp-python --force-reinstall --no-cache-dir
+!pip install "https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.23-cu125/llama_cpp_python-0.3.23-py3-none-linux_x86_64.whl"
 ```
 
-**Out of memory:**
-Use Q5_K_M (2.89 GB) — fits in any GPU with 4GB+ VRAM.
+**ModuleNotFoundError: src:** Run `!pip install -e latentsig-slm-router-med`
 
-**Slow inference:**
-Ensure `n_gpu_layers=-1` to offload all layers to GPU. CPU-only is 5-10x slower.
+**Adapter not found:** Engine auto-downloads from Hub. Check HF token if private repo.
