@@ -191,17 +191,20 @@ class LlamaCppEngine:
     ~3-5x faster than PyTorch on T4. Uses quantized weights
     with optimized KV cache and matmul kernels.
 
+    Supports batch inference for eval workloads.
+
     Requires: pip install llama-cpp-python
     """
 
-    def __init__(self, model_path: str, n_ctx: int = 2048,
+    def __init__(self, model_path: str, n_ctx: int = 4096,
                  n_gpu_layers: int = -1, temperature: float = 0.1,
-                 max_tokens: int = 300):
+                 max_tokens: int = 300, n_batch: int = 512):
         self.model_path = model_path
         self.n_ctx = n_ctx
         self.n_gpu_layers = n_gpu_layers
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.n_batch = n_batch
         self.llm = None
         self.call_count = 0
 
@@ -214,9 +217,10 @@ class LlamaCppEngine:
             model_path=self.model_path,
             n_ctx=self.n_ctx,
             n_gpu_layers=self.n_gpu_layers,
+            n_batch=self.n_batch,
             verbose=False,
         )
-        print(f"  GGUF loaded. Context: {self.n_ctx}, GPU layers: {self.n_gpu_layers}")
+        print(f"  GGUF loaded. Context: {self.n_ctx}, GPU layers: {self.n_gpu_layers}, batch: {self.n_batch}")
 
     def generate(self, system_prompt: str, user_prompt: str) -> tuple[str, float]:
         """Generate response. Returns (text, latency_seconds)."""
@@ -241,6 +245,47 @@ class LlamaCppEngine:
         except Exception as e:
             latency = _time.time() - start
             return json.dumps({"error": str(e)}), latency
+
+    def generate_batch(self, system_prompt: str, user_prompts: list[str],
+                       batch_size: int = 8) -> list[tuple[str, float]]:
+        """Batch generate for multiple queries.
+
+        Shares the same system prompt across all queries.
+        Processes in batches of `batch_size` using ThreadPoolExecutor.
+
+        Args:
+            system_prompt: shared system prompt for all queries
+            user_prompts: list of user queries
+            batch_size: how many to process concurrently
+
+        Returns:
+            list of (response_text, latency_seconds) tuples
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import time as _time
+
+        results = [None] * len(user_prompts)
+
+        def _generate_one(idx, prompt):
+            return idx, self.generate(system_prompt, prompt)
+
+        start = _time.time()
+
+        with ThreadPoolExecutor(max_workers=batch_size) as executor:
+            futures = [
+                executor.submit(_generate_one, i, prompt)
+                for i, prompt in enumerate(user_prompts)
+            ]
+            for future in as_completed(futures):
+                idx, (text, lat) = future.result()
+                results[idx] = (text, lat)
+
+        total = _time.time() - start
+        self.call_count += len(user_prompts)
+        print(f"  Batch: {len(user_prompts)} queries in {total:.1f}s "
+              f"({total/len(user_prompts):.2f}s/query, {batch_size} parallel)")
+
+        return results
 
 
 # ── Factory ──────────────────────────────────────────────────

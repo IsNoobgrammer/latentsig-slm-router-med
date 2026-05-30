@@ -506,33 +506,74 @@ def run_eval(
         t_start = time.time()
         running_correct = 0
 
-        for i, sample in enumerate(samples):
-            # Show what we're about to process (appears before API call)
-            query_preview = sample.query[:70].replace('\n', ' ')
-            lang_tag = "EN" if sample.language == "en" else "HI"
-            sys.stdout.write(f"  [{i+1:3d}/{len(samples)}] ({lang_tag}) {query_preview}...")
-            sys.stdout.flush()
+        # Check if engine supports batch inference
+        has_batch = hasattr(engine, 'generate_batch') and not use_agent
 
-            if use_agent:
-                result = eval_sample_with_agent(agent, sample, engine_name)
-            else:
-                result = eval_single_sample(engine, sample, engine_name, max_retries)
+        if has_batch:
+            # Batch mode: process all queries at once
+            from src.prompts import SYSTEM_PROMPT, build_user_prompt
+            queries = [build_user_prompt(s.query) for s in samples]
+            print(f"  Batch mode: {len(queries)} queries, 8 parallel...")
 
-            results.append(result)
-            metrics.add(result)
+            batch_results = engine.generate_batch(SYSTEM_PROMPT, queries, batch_size=8)
 
-            # Result line (overwrites the processing line)
-            status = "✓" if result.tool_correct else "✗"
-            fallback = " [FALLBACK]" if result.is_fallback else ""
-            retries = f" r={result.retry_count}" if result.retry_count > 0 else ""
-            if result.tool_correct:
-                running_correct += 1
-            running_acc = running_correct / (i + 1) * 100
+            for i, (sample, (raw_output, latency)) in enumerate(zip(samples, batch_results)):
+                from src.parser import parse_model_output
+                parse_result = parse_model_output(raw_output)
 
-            print(f"\r  [{i+1:3d}/{len(samples)}] {status} "
-                  f"tool={result.pred_tool:<28} gt={sample.gt_tool:<28} "
-                  f"lat={result.latency_ms:.0f}ms{retries}{fallback}  "
-                  f"acc={running_acc:.0f}%")
+                result = EvalResult(sample=sample, engine_name=engine_name)
+                result.latency_ms = latency * 1000
+
+                if parse_result.success:
+                    result.parse_success = True
+                    result.pred_tool = parse_result.data["tool"]
+                    result.pred_category = parse_result.data["category"]
+                else:
+                    result.error = parse_result.error
+                    result.is_fallback = True
+                    result.pred_tool = "emergency_dispatch"
+                    result.pred_category = "emergency"
+
+                result.tool_correct = (result.pred_tool == sample.gt_tool)
+                result.category_correct = (result.pred_category == sample.gt_category)
+
+                results.append(result)
+                metrics.add(result)
+
+                if result.tool_correct:
+                    running_correct += 1
+                running_acc = running_correct / (i + 1) * 100
+                status = "✓" if result.tool_correct else "✗"
+                print(f"  [{i+1:3d}/{len(samples)}] {status} "
+                      f"tool={result.pred_tool:<28} gt={sample.gt_tool:<28} "
+                      f"lat={result.latency_ms:.0f}ms  acc={running_acc:.0f}%")
+        else:
+            # Sequential mode (agent loop or non-batch engine)
+            for i, sample in enumerate(samples):
+                query_preview = sample.query[:70].replace('\n', ' ')
+                lang_tag = "EN" if sample.language == "en" else "HI"
+                sys.stdout.write(f"  [{i+1:3d}/{len(samples)}] ({lang_tag}) {query_preview}...")
+                sys.stdout.flush()
+
+                if use_agent:
+                    result = eval_sample_with_agent(agent, sample, engine_name)
+                else:
+                    result = eval_single_sample(engine, sample, engine_name, max_retries)
+
+                results.append(result)
+                metrics.add(result)
+
+                status = "✓" if result.tool_correct else "✗"
+                fallback = " [FALLBACK]" if result.is_fallback else ""
+                retries = f" r={result.retry_count}" if result.retry_count > 0 else ""
+                if result.tool_correct:
+                    running_correct += 1
+                running_acc = running_correct / (i + 1) * 100
+
+                print(f"\r  [{i+1:3d}/{len(samples)}] {status} "
+                      f"tool={result.pred_tool:<28} gt={sample.gt_tool:<28} "
+                      f"lat={result.latency_ms:.0f}ms{retries}{fallback}  "
+                      f"acc={running_acc:.0f}%")
 
         elapsed = time.time() - t_start
         print(f"\n  Done in {elapsed:.1f}s ({elapsed/len(samples):.2f}s/sample)")
@@ -586,6 +627,8 @@ def main():
                         help="Output path for results JSONL")
     parser.add_argument("--limit", type=int, default=None,
                         help="Limit number of eval samples (for quick testing)")
+    parser.add_argument("--batch-size", type=int, default=8,
+                        help="Batch size for parallel inference (GGUF only)")
 
     args = parser.parse_args()
 
