@@ -11,18 +11,11 @@
 
 ## Architecture Overview
 
-![Generation Pipeline](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/generation_pipeline.png)
+![Architecture Overview](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/architecture_overview.png)
 
-### Two-Stage SLM Inference
+### Agent Pipeline
 
-```
-Stage 1: TOOL CALL                         Stage 2: RESPONSE
-─────────────────                          ──────────────────
-System: tool-call prompt                   System: assistant prompt
-  (7 tool definitions)                       (LatentSig identity)
-User: symptom query                        User: query + tool result
-Output: JSON tool call                     Output: human-readable answer
-```
+![Agent Pipeline](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/agent_pipeline.png)
 
 The SLM runs twice per query:
 1. **Tool Call** — reads tool definitions, selects tool, outputs JSON
@@ -147,29 +140,11 @@ The SLM must select from 7 tools. Each tool has flat parameters (no nesting) for
 
 ### ReAct Loop Flow
 
-```
-INPUT → THOUGHT → ACTION → OBSERVATION → FINAL ANSWER
-
-  INPUT:     User query (natural language)
-  THOUGHT:   SLM generates reasoning + tool call JSON
-  ACTION:    Parse JSON, validate against TriageCall schema
-  OBSERVATION: Execute deterministic mock tool, get result
-  FINAL:     SLM synthesizes human-readable triage decision
-```
+![ReAct Loop Flow](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/react_loop_flow.png)
 
 ### Hallucination Recovery
 
-```
-SLM outputs malformed JSON
-    ↓
-Parse error detected
-    ↓
-Re-prompt with error context (max 3 retries)
-    ↓
-SLM self-corrects
-    ↓
-If all 3 fail → Safety fallback (emergency category)
-```
+![Hallucination Recovery](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/hallucination_recovery.png)
 
 ### Two-Stage Inference (agent_colab.py)
 
