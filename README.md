@@ -1,6 +1,10 @@
+<div align="center">
+
 # LatentSig Medical Triage Router
 
-> A local-first agentic workflow where a fine-tuned Small Language Model (SLM) acts as a reliable structured router for clinical medical triage.
+**A local-first agentic workflow where a fine-tuned Small Language Model (SLM) acts as a reliable structured router for clinical medical triage.**
+
+<br>
 
 [![Training](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1fakehai/training-latentsig-slm-router)
 [![Agent](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1fakehai/latentsig-slm-router-agent)
@@ -10,8 +14,17 @@
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?logo=github)](https://github.com/IsNoobgrammer/latentsig-slm-router-med)
 [![Eval](https://img.shields.io/badge/📊_Eval-Results-blue)](eval_result.md)
 
-**Author:** LatentSig  
-**Model:** Qwen3-4B-Instruct (QLoRA fine-tuned)
+<br>
+
+| | |
+|---|---|
+| **Author** | LatentSig |
+| **Model** | Qwen3-4B-Instruct (QLoRA fine-tuned) |
+| **Dataset** | 2,000 train + 40 eval (EN + Hinglish) |
+| **Tools** | 7 deterministic medical triage tools |
+| **Hardware** | Colab T4 (16GB) |
+
+</div>
 
 ---
 
