@@ -96,16 +96,17 @@ class UnslothEngine:
             print(f"  Downloaded to: {self.adapter_path}")
 
         print(f"Loading model: {self.base_model}")
+        model_name = self.adapter_path if self.adapter_path and os.path.isdir(self.adapter_path) else self.base_model
         self.model, self.tokenizer = FastLanguageModel.from_pretrained(
-            model_name=self.adapter_path if os.path.isdir(self.adapter_path) else self.base_model,
+            model_name=model_name,
             max_seq_length=self.max_seq_length,
             load_in_4bit=self.load_in_4bit,
         )
 
-        # Apply LoRA if loading from base model
-        if os.path.isdir(self.adapter_path):
-            pass
-        else:
+        # Apply LoRA if adapter_path provided and not already a local dir
+        if self.adapter_path and os.path.isdir(self.adapter_path):
+            pass  # Adapter already loaded via from_pretrained
+        elif self.adapter_path:
             self.model = FastLanguageModel.get_peft_model(
                 self.model,
                 r=16,
