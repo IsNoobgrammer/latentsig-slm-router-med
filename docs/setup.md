@@ -9,8 +9,8 @@ Inference and evaluation only. Training is done.
 ### Cell 1: Install
 
 ```python
-# Pre-built CUDA wheel (auto-detects CUDA version from index)
-!pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu128 --no-cache-dir --upgrade --force-reinstall --ignore-installed
+# Pre-built CUDA 12 wheel (direct URL — guaranteed GPU support)
+!pip install "https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.23-cu125/llama_cpp_python-0.3.23-py3-none-linux_x86_64.whl" --no-cache-dir --force-reinstall
 !git clone https://github.com/IsNoobgrammer/latentsig-slm-router-med.git -q
 !pip install -e latentsig-slm-router-med -q
 %cd latentsig-slm-router-med
