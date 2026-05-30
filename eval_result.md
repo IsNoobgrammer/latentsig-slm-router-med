@@ -27,7 +27,7 @@ The fine-tuned SLM (60%) appears worse than the base model (82.5%) — but only 
 
 ## Original Results (40 samples, with triage_assessment)
 
-![Accuracy](visuals/eval_accuracy_comparison.png)
+![Accuracy (Original)](visuals/eval_accuracy_original.png)
 
 | Metric | Qwen3-4B Base | SLM (Fine-tuned) | Mistral Small | Mistral Large |
 |--------|:------------:|:----------------:|:------------:|:------------:|

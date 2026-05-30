@@ -14,7 +14,51 @@ purple = '#bc8cff'
 models = ['Qwen3-4B\nBase', 'SLM\n(Fine-tuned)', 'Mistral\nSmall', 'Mistral\nLarge']
 colors = [green, yellow, blue, purple]
 
-# ── 1. Overall Accuracy (no triage) ──
+# ── 1. Overall Accuracy (original, 40 samples) ──
+fig, ax = plt.subplots(figsize=(12, 6))
+fig.patch.set_facecolor(bg)
+ax.set_facecolor(bg)
+
+tool_acc = [82.5, 60.0, 80.0, 87.5]
+cat_acc = [90.0, 87.5, 90.0, 90.0]
+x = np.arange(len(models))
+w = 0.35
+
+bars1 = ax.bar(x - w/2, tool_acc, w, label='Tool Accuracy', color=blue, edgecolor='#30363d')
+bars2 = ax.bar(x + w/2, cat_acc, w, label='Category Accuracy', color=green, edgecolor='#30363d')
+
+for bar in bars1:
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5, f'{bar.get_height():.1f}%',
+            ha='center', va='bottom', color=fg, fontweight='bold', fontsize=13)
+for bar in bars2:
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5, f'{bar.get_height():.1f}%',
+            ha='center', va='bottom', color=fg, fontweight='bold', fontsize=13)
+
+ax.set_ylim(0, 105)
+ax.set_xticks(x)
+ax.set_xticklabels(models, color=fg, fontsize=11)
+ax.tick_params(axis='y', colors=fg)
+ax.set_ylabel('Accuracy (%)', color=fg, fontsize=12)
+ax.set_title('Tool vs Category Accuracy — Original (40 samples, with triage_assessment)', color=fg, fontsize=14, fontweight='bold')
+ax.legend(facecolor='#21262d', edgecolor='#30363d', labelcolor=fg)
+ax.spines['bottom'].set_color('#30363d')
+ax.spines['left'].set_color('#30363d')
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.grid(axis='y', color='#21262d', linewidth=0.5)
+
+# Annotation: fine-tuning hurt
+ax.annotate('Fine-tuning hurt due to\ntriage_assessment ambiguousness',
+            xy=(1, 60), xytext=(1.9, 40),
+            arrowprops=dict(arrowstyle='->', color=red, lw=2),
+            color=red, fontweight='bold', fontsize=10, ha='center')
+
+plt.tight_layout()
+plt.savefig('visuals/eval_accuracy_original.png', dpi=150, facecolor=bg, bbox_inches='tight')
+plt.close()
+print('Created: eval_accuracy_original.png')
+
+# ── 1b. Overall Accuracy (corrected, 37 samples) ──
 fig, ax = plt.subplots(figsize=(12, 6))
 fig.patch.set_facecolor(bg)
 ax.set_facecolor(bg)
@@ -39,7 +83,7 @@ ax.set_xticks(x)
 ax.set_xticklabels(models, color=fg, fontsize=11)
 ax.tick_params(axis='y', colors=fg)
 ax.set_ylabel('Accuracy (%)', color=fg, fontsize=12)
-ax.set_title('Tool vs Category Accuracy — triage_assessment removed, mapped to emergency_dispatch', color=fg, fontsize=14, fontweight='bold')
+ax.set_title('Tool vs Category Accuracy — Corrected (37 samples, triage→emergency handler)', color=fg, fontsize=14, fontweight='bold')
 ax.legend(facecolor='#21262d', edgecolor='#30363d', labelcolor=fg)
 ax.spines['bottom'].set_color('#30363d')
 ax.spines['left'].set_color('#30363d')
