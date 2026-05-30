@@ -5,7 +5,9 @@
 **Author:** LatentSig  
 **Model:** Qwen3-4B-Instruct (QLoRA fine-tuned)  
 **Dataset:** [fhai50032/latentsig-med-triage-router](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router)  
-**GitHub:** [IsNoobgrammer/latentsig-slm-router-med](https://github.com/IsNoobgrammer/latentsig-slm-router-med)
+**GitHub:** [IsNoobgrammer/latentsig-slm-router-med](https://github.com/IsNoobgrammer/latentsig-slm-router-med)  
+**Training:** [W&B Report](https://wandb.ai/ablations-tinycompany-ai/latentsig-med-triage-router/reports/LatentSig-SLM-Router--VmlldzoxNzA2MzQ3OA)  
+**GGUF:** [fhai50032/latentsig-med-router-qwen3-4b-gguf](https://huggingface.co/fhai50032/latentsig-med-router-qwen3-4b-gguf)
 
 ---
 
