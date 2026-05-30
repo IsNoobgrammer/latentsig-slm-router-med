@@ -677,13 +677,19 @@ def main():
         else:
             print("WARNING: No Mistral API keys — skipping baseline")
 
-        from src.inference import UnslothEngine
-        engine = UnslothEngine(
-            base_model=args.base_model,
-            adapter_path=args.adapter_path,
-        )
-        engine.load()
-        engines["slm-finetuned"] = engine
+        if args.gguf_path:
+            from src.inference import LlamaCppEngine
+            engine = LlamaCppEngine(model_path=args.gguf_path)
+            engine.load()
+            engines["slm-gguf"] = engine
+        else:
+            from src.inference import UnslothEngine
+            engine = UnslothEngine(
+                base_model=args.base_model,
+                adapter_path=args.adapter_path,
+            )
+            engine.load()
+            engines["slm-finetuned"] = engine
         args.output = args.output or "eval_results_full.jsonl"
 
     # Run eval
