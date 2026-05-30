@@ -287,8 +287,17 @@ class TriageAgent:
         if self.verbose:
             print(msg)
 
-    def run(self, query):
+    def run(self, query, verbose=None):
+        """Run the two-stage agentic loop.
+
+        Args:
+            query: Patient symptom description
+            verbose: Override self.verbose for this run. None = use instance setting.
+        """
         start = time.time()
+        show = verbose if verbose is not None else self.verbose
+        old_verbose = self.verbose
+        self.verbose = show
 
         # ── Stage 1: Tool Call ──
         self._log(f"\n{'='*60}")
@@ -361,6 +370,8 @@ Please provide a clear, professional triage summary to the user."""
         self._log(f"\n  [STAGE 3] Response generated:")
         self._log(f"    {response[:200]}")
         self._log(f"\n  Latency: {total_latency:.0f}ms (tool: {tool_latency*1000:.0f}ms, response: {response_latency*1000:.0f}ms)")
+
+        self.verbose = old_verbose  # Restore original verbose setting
 
         return AgentResult(
             query=query,

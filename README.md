@@ -11,38 +11,7 @@
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    LatentSig Medical Triage Router                   │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐          │
-│  │  User Query   │───▶│  SLM Engine   │───▶│  JSON Parser  │          │
-│  │  (EN/Hindi)   │    │  (Qwen3-4B)   │    │  (Pydantic)   │          │
-│  └──────────────┘    └──────────────┘    └──────┬───────┘          │
-│                                                  │                  │
-│                              ┌───────────────────┤                  │
-│                              │ Valid              │ Invalid          │
-│                              ▼                   ▼                  │
-│                      ┌──────────────┐    ┌──────────────┐          │
-│                      │ Tool Executor │    │ Retry + Error │          │
-│                      │ (deterministic│    │ Context (max 3)│         │
-│                      └──────┬───────┘    └──────┬───────┘          │
-│                             │                    │                  │
-│                             ▼                    ▼                  │
-│                      ┌──────────────┐    ┌──────────────┐          │
-│                      │  Tool Log    │    │ Safety Fallback│         │
-│                      │  (CSV/DB)    │    │ (emergency)    │         │
-│                      └──────┬───────┘    └──────────────┘          │
-│                             │                                       │
-│                             ▼                                       │
-│                      ┌──────────────┐                               │
-│                      │ SLM Response │                               │
-│                      │ (assistant   │                               │
-│                      │  prompt)     │                               │
-│                      └──────────────┘                               │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Generation Pipeline](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/generation_pipeline.png)
 
 ### Two-Stage SLM Inference
 
@@ -298,11 +267,7 @@ ds = ds.map(format_to_text, remove_columns=ds.column_names)
 
 Every sample passes 3 layers before inclusion:
 
-| Layer | Method | Purpose | Speed |
-|-------|--------|---------|-------|
-| Phase 1 | Pydantic | JSON valid, fields present, enums correct | ~0.1ms |
-| Phase 2 | Tool Enforcement | Target tool matches actual tool | ~0.5ms |
-| Phase 3 | LLM Judge | Independent medical accuracy (unbiased) | ~1s |
+![Verification Pipeline](https://huggingface.co/datasets/fhai50032/latentsig-med-triage-router/resolve/main/visuals/verification_pipeline.png)
 
 **Critical:** The LLM judge does NOT know which tool was targeted. It evaluates tool selection purely on medical merit.
 
@@ -356,8 +321,17 @@ engine = SLMEngine(adapter_path="fhai50032/latentsig-med-router-qwen3-4b")
 engine.load()
 
 agent = TriageAgent(engine)
-result = agent.run("68-year-old male, sudden facial droop, cannot speak")
-print(result.response)
+
+# Verbose: shows full ReAct loop (tool call, execution, response)
+result = agent.run("68-year-old male, sudden facial droop, cannot speak", verbose=True)
+
+# Silent: only returns result object
+result = agent.run("chest pain, 55yo male", verbose=False)
+
+print(result.response)          # Human-readable answer
+print(result.tool_call)         # JSON tool call
+print(result.tool_result)       # Deterministic tool output
+print(result.total_latency_ms)  # End-to-end latency
 ```
 
 ---
