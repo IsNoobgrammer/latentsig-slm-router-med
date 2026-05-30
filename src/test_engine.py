@@ -82,7 +82,7 @@ def run_single_query(engine, query, max_retries=3):
 def main():
     parser = argparse.ArgumentParser(description="Interactive engine tester")
 
-    parser.add_argument("--engine", choices=["placeholder", "mistral", "slm"],
+    parser.add_argument("--engine", choices=["placeholder", "mistral", "slm", "gguf"],
                         default="mistral", help="Engine to test")
     parser.add_argument("--model", default="mistral-small-latest",
                         help="Mistral model name")
@@ -90,6 +90,8 @@ def main():
                         help="Comma-separated API keys")
     parser.add_argument("--adapter-path", default="fhai50032/latentsig-med-router-qwen3-4b",
                         help="SLM adapter path")
+    parser.add_argument("--gguf-path", default=None,
+                        help="Path to GGUF model file")
     parser.add_argument("--query", default=None,
                         help="Single query to test (non-interactive)")
     parser.add_argument("--max-retries", type=int, default=3,
@@ -122,6 +124,15 @@ def main():
         )
         engine.load()
         print(f"Engine: SLM ({args.adapter_path})")
+
+    elif args.engine == "gguf":
+        if not args.gguf_path:
+            print("ERROR: --gguf-path required for gguf engine")
+            sys.exit(1)
+        from src.inference import LlamaCppEngine
+        engine = LlamaCppEngine(model_path=args.gguf_path)
+        engine.load()
+        print(f"Engine: llama.cpp ({args.gguf_path})")
 
     # Single query mode
     if args.query:

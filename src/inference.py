@@ -183,13 +183,74 @@ class MistralAPIEngine:
             return json.dumps({"error": str(e)}), latency
 
 
+# ── LlamaCpp Engine (GGUF inference) ─────────────────────────
+
+class LlamaCppEngine:
+    """llama.cpp engine for fast GGUF inference.
+
+    ~3-5x faster than PyTorch on T4. Uses quantized weights
+    with optimized KV cache and matmul kernels.
+
+    Requires: pip install llama-cpp-python
+    """
+
+    def __init__(self, model_path: str, n_ctx: int = 2048,
+                 n_gpu_layers: int = -1, temperature: float = 0.1,
+                 max_tokens: int = 300):
+        self.model_path = model_path
+        self.n_ctx = n_ctx
+        self.n_gpu_layers = n_gpu_layers
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.llm = None
+        self.call_count = 0
+
+    def load(self):
+        """Load GGUF model."""
+        from llama_cpp import Llama
+
+        print(f"Loading GGUF: {self.model_path}")
+        self.llm = Llama(
+            model_path=self.model_path,
+            n_ctx=self.n_ctx,
+            n_gpu_layers=self.n_gpu_layers,
+            verbose=False,
+        )
+        print(f"  GGUF loaded. Context: {self.n_ctx}, GPU layers: {self.n_gpu_layers}")
+
+    def generate(self, system_prompt: str, user_prompt: str) -> tuple[str, float]:
+        """Generate response. Returns (text, latency_seconds)."""
+        import time as _time
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        start = _time.time()
+        try:
+            output = self.llm.create_chat_completion(
+                messages=messages,
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+                response_format={"type": "json_object"},
+            )
+            latency = _time.time() - start
+            self.call_count += 1
+            return output["choices"][0]["message"]["content"], latency
+        except Exception as e:
+            latency = _time.time() - start
+            return json.dumps({"error": str(e)}), latency
+
+
 # ── Factory ──────────────────────────────────────────────────
 
 def create_engine(mode: str = "placeholder", **kwargs) -> InferenceEngine:
     """Create an inference engine.
 
     Args:
-        mode: "placeholder" (test), "unsloth" (real inference)
+        mode: "placeholder" (test), "unsloth" (real inference),
+              "mistral" (API baseline), "gguf" (llama.cpp)
         **kwargs: passed to engine constructor
     """
     if mode == "placeholder":
@@ -200,5 +261,9 @@ def create_engine(mode: str = "placeholder", **kwargs) -> InferenceEngine:
         return engine
     elif mode == "mistral":
         return MistralAPIEngine(**kwargs)
+    elif mode == "gguf":
+        engine = LlamaCppEngine(**kwargs)
+        engine.load()
+        return engine
     else:
-        raise ValueError(f"Unknown engine mode: {mode}. Use 'placeholder', 'unsloth', or 'mistral'.")
+        raise ValueError(f"Unknown engine mode: {mode}. Use 'placeholder', 'unsloth', 'mistral', or 'gguf'.")

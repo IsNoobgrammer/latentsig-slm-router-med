@@ -562,10 +562,10 @@ def run_eval(
 def main():
     parser = argparse.ArgumentParser(description="LatentSig Eval: SLM vs Baseline")
 
-    parser.add_argument("--mode", choices=["placeholder", "mistral", "slm", "full"],
+    parser.add_argument("--mode", choices=["placeholder", "mistral", "slm", "gguf", "full"],
                         default="placeholder",
                         help="placeholder: test pipeline; mistral: baseline only; "
-                             "slm: fine-tuned only; full: both (Colab)")
+                             "slm: fine-tuned only; gguf: llama.cpp; full: both (Colab)")
     parser.add_argument("--eval-file", default="hf",
                         help="Path to eval JSONL or 'hf' for HuggingFace dataset")
     parser.add_argument("--api-keys", default=None,
@@ -574,6 +574,8 @@ def main():
                         help="Mistral model for baseline")
     parser.add_argument("--adapter-path", default="fhai50032/latentsig-med-router-qwen3-4b",
                         help="Path to fine-tuned LoRA adapter")
+    parser.add_argument("--gguf-path", default=None,
+                        help="Path to GGUF model file")
     parser.add_argument("--base-model", default="unsloth/Qwen3-4B-Instruct",
                         help="Base model for SLM engine")
     parser.add_argument("--max-retries", type=int, default=3,
@@ -638,6 +640,16 @@ def main():
         engine.load()
         engines["slm"] = engine
         args.output = args.output or "eval_results_slm.jsonl"
+
+    elif args.mode == "gguf":
+        if not args.gguf_path:
+            print("ERROR: --gguf-path required for gguf mode")
+            sys.exit(1)
+        from src.inference import LlamaCppEngine
+        engine = LlamaCppEngine(model_path=args.gguf_path)
+        engine.load()
+        engines["gguf"] = engine
+        args.output = args.output or "eval_results_gguf.jsonl"
 
     elif args.mode == "full":
         # Both engines
